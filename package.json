@@ -1,0 +1,55 @@
+{
+    "name": "{{data.name}}",
+    "version": "1.0.0",
+    "description": "{{data.description}}",
+    "license": "MIT",
+    "repository": "astoilkov/{{data.name}}",
+    "funding": "https://github.com/sponsors/astoilkov",
+    "author": {
+        "name": "Antonio Stoilkov",
+        "email": "hello@astoilkov.com",
+        "url": "https://astoilkov.com"
+    },
+    "type": "module",
+    "exports": {
+        "default": "./index.js",
+        "types": "./index.d.ts"
+    },
+    "sideEffects": false,
+    "engines": {
+        "node": ">=12"
+    },
+    "scripts": {
+        "build": "tsc",
+        "lint": "eslint --cache --format=pretty --ext=.ts ./",
+        "test": "yarn run build && yarn run lint && jest --coverage --coverageReporters=text",
+        "release": "yarn run build && np",
+        "prettier": "prettier --write --config .prettierrc.yaml {*.ts,*.json}"
+    },
+    "files": [
+        "index.js",
+        "src/*.js",
+        "index.d.ts",
+        "src/*.d.ts"
+    ],
+    "keywords": [
+        "{{data.keywords}}"
+    ],
+    "devDependencies": {
+        "@types/jest": "^28.1.1",
+        "@typescript-eslint/eslint-plugin": "^5.27.1",
+        "@typescript-eslint/parser": "^5.27.1",
+        "confusing-browser-globals": "^1.0.11",
+        "eslint": "^8.17.0",
+        "eslint-config-strictest": "^0.4.0",
+        "eslint-formatter-pretty": "^4.0.0",
+        "eslint-plugin-promise": "^6.0.0",
+        "eslint-plugin-unicorn": "^42.0.0",
+        "jest": "^28.1.1",
+        "jest-environment-jsdom": "^28.1.1",
+        "np": "^7.6.1",
+        "prettier": "^2.6.2",
+        "ts-jest": "^28.0.4",
+        "typescript": "^4.7.3"
+    }
+}
