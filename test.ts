@@ -1,3 +1,3 @@
-describe('{{data.name}}', () => {
+describe('good-try', () => {
 
 })

@@ -1,14 +1,14 @@
-# `{{data.name}}`
+# `good-try`
 
 > {{data.description}}
 
-[![Gzipped Size](https://img.shields.io/bundlephobia/minzip/{{data.name}})](https://bundlephobia.com/result?p={{data.name}})
-[![Build Status](https://img.shields.io/github/workflow/status/astoilkov/{{data.name}}/CI)](https://github.com/astoilkov/{{data.name}}/actions/workflows/main.yml)
+[![Gzipped Size](https://img.shields.io/bundlephobia/minzip/good-try)](https://bundlephobia.com/result?p=good-try)
+[![Build Status](https://img.shields.io/github/workflow/status/astoilkov/good-try/CI)](https://github.com/astoilkov/good-try/actions/workflows/main.yml)
 
 ## Install
 
 ```bash
-npm install {{data.name}}
+npm install good-try
 ```
 
 ## Why

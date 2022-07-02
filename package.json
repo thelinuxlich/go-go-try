@@ -1,9 +1,9 @@
 {
-    "name": "{{data.name}}",
+    "name": "good-try",
     "version": "1.0.0",
     "description": "{{data.description}}",
     "license": "MIT",
-    "repository": "astoilkov/{{data.name}}",
+    "repository": "astoilkov/good-try",
     "funding": "https://github.com/sponsors/astoilkov",
     "author": {
         "name": "Antonio Stoilkov",
@@ -51,5 +51,8 @@
         "prettier": "^2.6.2",
         "ts-jest": "^28.0.4",
         "typescript": "^4.7.3"
+    },
+    "dependencies": {
+        "p-is-promise": "^4.0.0"
     }
 }
