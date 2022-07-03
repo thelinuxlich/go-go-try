@@ -1,17 +1,25 @@
 import pIsPromise from 'p-is-promise'
 
-export default function goodTry<T, K>(value: () => T, defaultValue: K): T | K
+type DefaultValue<T> = T | ((err: unknown) => T)
+
+export default function goodTry<T, K>(value: () => T, defaultValue: DefaultValue<K>): T | K
 export default function goodTry<T>(value: () => T): T | undefined
 export default function goodTry<T, K>(
     value: Promise<T> | (() => Promise<T>),
-    defaultValue: K,
+    defaultValue: DefaultValue<K>,
 ): Promise<T | K>
 export default function goodTry<T>(value: Promise<T> | (() => Promise<T>)): Promise<T | undefined>
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 export default function goodTry<T, K>(
     value: (() => T) | Promise<T> | (() => Promise<T>),
-    defaultValue?: K,
+    defaultValue?: DefaultValue<K>,
 ): T | K | undefined | Promise<T | K | undefined> {
+    const onCatch = (err: unknown): K | undefined => {
+        return typeof defaultValue === 'function'
+            ? (defaultValue as (err: unknown) => K | undefined)(err)
+            : defaultValue
+    }
+
     try {
         const unwrappedValue = typeof value === 'function' ? value() : value
 
@@ -24,15 +32,15 @@ export default function goodTry<T, K>(
                             resolve(value)
                         })
                         // eslint-disable-next-line promise/prefer-await-to-then
-                        .catch(() => {
-                            resolve(defaultValue)
+                        .catch((err) => {
+                            resolve(onCatch(err))
                         })
                 )
             })
         }
 
         return unwrappedValue
-    } catch {
-        return defaultValue
+    } catch (err) {
+        return onCatch(err)
     }
 }
