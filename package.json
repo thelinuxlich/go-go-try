@@ -22,7 +22,7 @@
     "scripts": {
         "build": "tsc",
         "lint": "eslint --cache --format=pretty --ext=.ts ./",
-        "test": "yarn run build && yarn run lint && jest --coverage --coverageReporters=text",
+        "test": "yarn run build && yarn run lint && NODE_OPTIONS=--experimental-vm-modules jest --coverage --coverageReporters=text",
         "release": "yarn run build && np",
         "prettier": "prettier --write --config .prettierrc.yaml {*.ts,*.json}"
     },
@@ -50,6 +50,7 @@
         "np": "^7.6.1",
         "prettier": "^2.6.2",
         "ts-jest": "^28.0.4",
+        "ts-node": "^10.8.2",
         "typescript": "^4.7.3"
     },
     "dependencies": {
