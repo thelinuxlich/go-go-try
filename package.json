@@ -33,7 +33,10 @@
         "src/*.d.ts"
     ],
     "keywords": [
-        "{{data.keywords}}"
+        "errors",
+        "try",
+        "catch",
+        "error handling"
     ],
     "devDependencies": {
         "@types/jest": "^28.1.1",
