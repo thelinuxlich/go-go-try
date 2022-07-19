@@ -41,3 +41,7 @@ const todos = await goodTry(fetchTodos(), (err) => {
 - a callback that receives `err` as first parameter (the return value of the callback is returned if the first parameter throws)
 
 If you use TypeScript, the types are well defined and won't let you make a mistake.
+
+## Related
+
+- [settle-it](https://github.com/astoilkov/settle-it) – Like `Promise.allSettled()` but for sync and async functions. Similarly to `good-try` it handles sync/async functions that throw an error. However, it returns an object so you know if and what error was thrown.
