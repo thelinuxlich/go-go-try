@@ -34,7 +34,8 @@
         "errors",
         "try",
         "catch",
-        "error handling"
+        "error handling",
+        "nice-try"
     ],
     "devDependencies": {
         "@types/jest": "^28.1.1",
