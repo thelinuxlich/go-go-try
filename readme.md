@@ -5,6 +5,15 @@
 [![Gzipped Size](https://img.shields.io/bundlephobia/minzip/good-try)](https://bundlephobia.com/result?p=good-try)
 [![Build Status](https://img.shields.io/github/workflow/status/astoilkov/good-try/CI)](https://github.com/astoilkov/good-try/actions/workflows/main.yml)
 
+## Why
+
+Why not [`nice-try`](https://github.com/electerious/nice-try) with it's 70+ million downloads per month?
+- `good-try` supports async functions.
+- `good-try` supports an optional default value.
+- `good-try` allows you to capture the thrown error.
+- `good-try` is written in TypeScript and the types are in a way to reduce developer errors. For example, I sometimes incorrectly type `goodTry(readFileSync())`, but the types don't allow this.
+- `good-try` has a friend — [`settle-it`](https://github.com/astoilkov/settle-it).
+
 ## Install
 
 ```bash
