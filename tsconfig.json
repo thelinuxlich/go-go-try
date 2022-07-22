@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "ES6",
+        "target": "ES2020",
 
         // previously "CommonJS", we now use "ES2015" to transpile TypeScript to "export default"
         // instead of "exports.default ="
