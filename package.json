@@ -11,10 +11,8 @@
         "url": "https://astoilkov.com"
     },
     "type": "module",
-    "exports": {
-        "default": "./index.js",
-        "types": "./index.d.ts"
-    },
+    "main": "./index.js",
+    "types": "./index.d.ts",
     "sideEffects": false,
     "engines": {
         "node": ">=12"
