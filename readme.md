@@ -26,6 +26,7 @@ Why not just `try`/`catch`?
   } catch {}
   return todos.filter(todo => todo.done)
   ```
+- It takes more space. It's slower to type.
 
 ## Install
 
