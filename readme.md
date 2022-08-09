@@ -1,6 +1,6 @@
 # `good-try`
 
-> Tries to execute sync/async function, returns a specified default value if the function throws.
+> Tries to execute a sync/async function, returns a specified default value if the function throws.
 
 [![Gzipped Size](https://img.shields.io/bundlephobia/minzip/good-try)](https://bundlephobia.com/result?p=good-try)
 [![Build Status](https://img.shields.io/github/workflow/status/astoilkov/good-try/CI)](https://github.com/astoilkov/good-try/actions/workflows/main.yml)

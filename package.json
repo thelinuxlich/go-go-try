@@ -1,7 +1,7 @@
 {
     "name": "good-try",
     "version": "1.0.2",
-    "description": "Tries to execute sync/async function, returns a specified default value if the function throws",
+    "description": "Tries to execute a sync/async function, returns a specified default value if the function throws",
     "license": "MIT",
     "repository": "astoilkov/good-try",
     "funding": "https://github.com/sponsors/astoilkov",
