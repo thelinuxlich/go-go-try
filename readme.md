@@ -11,7 +11,7 @@ Why not [`nice-try`](https://github.com/electerious/nice-try) with it's 70+ mill
 - `good-try` supports async functions.
 - `good-try` supports an optional default value.
 - `good-try` allows you to capture the thrown error.
-- `good-try` is written in TypeScript and the types are in a way to reduce developer errors. For example, I sometimes incorrectly type `goodTry(readFileSync())`, but the types don't allow this.
+- `good-try` is written in TypeScript. The types are written in a way that reduces developer errors. For example, I sometimes incorrectly type `goodTry(readFileSync())`, but the types don't allow this.
 - `good-try` has a friend — [`settle-it`](https://github.com/astoilkov/settle-it).
 - I aim for high-quality with [my open-source principles](https://astoilkov.com/my-open-source-principles).
 
