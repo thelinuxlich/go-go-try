@@ -17,7 +17,7 @@ Why not [`nice-try`](https://github.com/electerious/nice-try) with it's 70+ mill
 
 Why not just `try`/`catch`?
 - In a lot of cases, `try`/`catch` is still the better option.
-- Nested `try`/`catch` statements are hard to process mentally. They also indent the code and make it hard to read. A single `try`/`catch` does the same but in a lesser degree.
+- Nested `try`/`catch` statements are hard to process mentally. They also indent the code and make it hard to read. A single `try`/`catch` does the same but to a lesser degree.
 - If you [prefer const](https://eslint.org/docs/latest/rules/prefer-const), `try`/`catch` statements get in the way because you need to use `let` if you need the variable outside of the `try`/`catch` scope:
   ```ts
   let todos;
