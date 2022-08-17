@@ -63,6 +63,7 @@ sentToErrorTrackingService(err)
 -   a value of the same type of the first parameter that will be returned if the first parameter throws
 
 **Returns** a tuple with the possible error and result (Golang style)
+
 If you use TypeScript, the types are well defined and won't let you make a mistake.
 
 ## Inspiration
