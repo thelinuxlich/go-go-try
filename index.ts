@@ -1,46 +1,55 @@
 import pIsPromise from 'p-is-promise'
 
-type DefaultValue<T> = T | ((err: unknown) => T)
+type ResultTuple<T> = [string?, T?]
 
-export default function goodTry<T, K>(value: () => T, defaultValue: DefaultValue<K>): T | K
-export default function goodTry<T>(value: () => T): T | undefined
-export default function goodTry<T, K>(
-    value: Promise<T> | (() => Promise<T>),
-    defaultValue: DefaultValue<K>,
-): Promise<T | K>
-export default function goodTry<T>(value: Promise<T> | (() => Promise<T>)): Promise<T | undefined>
-// eslint-disable-next-line @typescript-eslint/promise-function-async
-export default function goodTry<T, K>(
-    value: (() => T) | Promise<T> | (() => Promise<T>),
-    defaultValue?: DefaultValue<K>,
-): T | K | undefined | Promise<T | K | undefined> {
-    const onCatch = (err: unknown): K | undefined => {
-        return typeof defaultValue === 'function'
-            ? (defaultValue as (err: unknown) => K | undefined)(err)
-            : defaultValue
+type ErrorWithMessage = {
+    message: string
+}
+
+function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
+    return (
+        typeof error === 'object' &&
+        error !== null &&
+        'message' in error &&
+        typeof (error as Record<string, unknown>).message === 'string'
+    )
+}
+
+function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
+    if (isErrorWithMessage(maybeError)) {
+        return maybeError
     }
 
+    try {
+        return new Error(JSON.stringify(maybeError))
+    } catch {
+        // fallback in case there's an error stringifying the maybeError
+        // like with circular references for example.
+        return new Error(String(maybeError))
+    }
+}
+
+function getErrorMessage(error: unknown): string {
+    return toErrorWithMessage(error).message
+}
+
+export default function goodTry<T>(value: Promise<T>, defaultValue?: T): Promise<ResultTuple<T>>
+export default function goodTry<T>(value: () => T, defaultValue?: T): ResultTuple<T>
+export default function goodTry<T>(
+    value: (() => T) | Promise<T>,
+    defaultValue?: T,
+): ResultTuple<T> | Promise<ResultTuple<T>> {
     try {
         const unwrappedValue = typeof value === 'function' ? value() : value
 
         if (pIsPromise(unwrappedValue)) {
-            return new Promise((resolve) => {
-                return (
-                    unwrappedValue
-                        // eslint-disable-next-line promise/prefer-await-to-then
-                        .then((value) => {
-                            resolve(value)
-                        })
-                        // eslint-disable-next-line promise/prefer-await-to-then
-                        .catch((err) => {
-                            resolve(onCatch(err))
-                        })
-                )
-            })
+            return Promise.resolve(unwrappedValue)
+                .then((value) => [undefined, value])
+                .catch((err) => [getErrorMessage(err), defaultValue]) as Promise<ResultTuple<T>>
         }
 
-        return unwrappedValue
+        return [undefined, unwrappedValue]
     } catch (err) {
-        return onCatch(err)
+        return [getErrorMessage(err), defaultValue]
     }
 }

@@ -26,5 +26,7 @@ module.exports = {
 
     rules: {
         'no-restricted-globals': ['error', ...confusingBrowserGlobals],
+        '@typescript-eslint/promise-function-async': 0,
+        'promise/prefer-await-to-then': 0,
     },
 }
