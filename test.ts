@@ -1,14 +1,14 @@
-import goodTry from './index'
+import goTry from './index'
 
-describe('good-try', () => {
+describe('go-go-try', () => {
     it(`value returned by callback is used when callback doesn't throw`, () => {
-        const [_, value] = goodTry(() => 'value', 'default')
+        const [_, value] = goTry(() => 'value', 'default')
 
         expect(value).toBe('value')
     })
 
     it('if callback throws, return default value', () => {
-        const [_, value] = goodTry(() => {
+        const [_, value] = goTry(() => {
             throw new Error('error')
         }, 'default')
 
@@ -16,7 +16,7 @@ describe('good-try', () => {
     })
 
     it('if callback throws, return default callback value', () => {
-        const [err, value] = goodTry(() => {
+        const [err, value] = goTry(() => {
             throw new Error('error')
         }, 'default')
 
@@ -25,13 +25,13 @@ describe('good-try', () => {
     })
 
     it('first parameter accepts promises and makes the function async', async () => {
-        const [_, value] = await goodTry(Promise.resolve('value'), 'default')
+        const [_, value] = await goTry(Promise.resolve('value'), 'default')
 
         expect(value).toBe('value')
     })
 
     it('if callback throws, return default value', async () => {
-        const [err, value] = await goodTry(Promise.reject(new Error('error')), 'default')
+        const [err, value] = await goTry(Promise.reject(new Error('error')), 'default')
 
         expect(value).toBe('default')
         expect(err).toBe('error')

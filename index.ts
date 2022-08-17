@@ -33,9 +33,9 @@ function getErrorMessage(error: unknown): string {
     return toErrorWithMessage(error).message
 }
 
-export default function goodTry<T>(value: Promise<T>, defaultValue?: T): Promise<ResultTuple<T>>
-export default function goodTry<T>(value: () => T, defaultValue?: T): ResultTuple<T>
-export default function goodTry<T>(
+export default function goTry<T>(value: Promise<T>, defaultValue?: T): Promise<ResultTuple<T>>
+export default function goTry<T>(value: () => T, defaultValue?: T): ResultTuple<T>
+export default function goTry<T>(
     value: (() => T) | Promise<T>,
     defaultValue?: T,
 ): ResultTuple<T> | Promise<ResultTuple<T>> {
