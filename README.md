@@ -10,7 +10,6 @@
 Why not [`nice-try`](https://github.com/electerious/nice-try) with it's 70+ million downloads per month?
 
 -   `go-go-try` supports async functions.
--   `go-go-try` supports an optional default value.
 -   `go-go-try` allows you to capture the thrown error.
 -   `go-go-try` is written in TypeScript. The types are written in a way that reduce developer errors.
 -   `go-go-try` is inspired by Golang error catching.
@@ -41,13 +40,13 @@ npm install go-go-try
 import goTry from 'go-go-try'
 
 // tries to parse todos, returns empty array if it fails
-const [_, value] = goTry(() => JSON.parse(todos), [])
+const [_, value = []] = goTry(() => JSON.parse(todos))
 
 // fetch todos, on error, fallback to empty array
-const [_, todos] = await goTry(fetchTodos(), [])
+const [_, todos = []] = await goTry(fetchTodos())
 
 // fetch todos, fallback to empty array, send error to your error tracking service
-const [err, todos] = await goTry(fetchTodos(), [])
+const [err, todos = []] = await goTry(fetchTodos())
 sentToErrorTrackingService(err)
 ```
 
@@ -57,10 +56,6 @@ sentToErrorTrackingService(err)
 
 -   synchronous function `goTry(() => JSON.parse(value))`
 -   asynchronous function / Promise
-
-**Second parameter** accepts:
-
--   a value of the same type of the first parameter that will be returned if the first parameter throws
 
 **Returns** a tuple with the possible error and result (Golang style)
 

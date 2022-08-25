@@ -33,23 +33,25 @@ function getErrorMessage(error: unknown): string {
     return toErrorWithMessage(error).message
 }
 
-export default function goTry<T>(value: Promise<T>, defaultValue?: T): Promise<ResultTuple<T>>
-export default function goTry<T>(value: () => T, defaultValue?: T): ResultTuple<T>
 export default function goTry<T>(
-    value: (() => T) | Promise<T>,
+    value: PromiseLike<T>,
     defaultValue?: T,
-): ResultTuple<T> | Promise<ResultTuple<T>> {
+): PromiseLike<ResultTuple<T>>
+export default function goTry<T>(value: () => T): ResultTuple<T>
+export default function goTry<T>(
+    value: (() => T) | PromiseLike<T>,
+): ResultTuple<T> | PromiseLike<ResultTuple<T>> {
     try {
         const unwrappedValue = typeof value === 'function' ? value() : value
 
         if (pIsPromise(unwrappedValue)) {
             return Promise.resolve(unwrappedValue)
                 .then((value) => [undefined, value])
-                .catch((err) => [getErrorMessage(err), defaultValue]) as Promise<ResultTuple<T>>
+                .catch((err) => [getErrorMessage(err), undefined]) as Promise<ResultTuple<T>>
         }
 
-        return [undefined, unwrappedValue]
+        return [undefined, unwrappedValue as T | undefined]
     } catch (err) {
-        return [getErrorMessage(err), defaultValue]
+        return [getErrorMessage(err), undefined]
     }
 }
