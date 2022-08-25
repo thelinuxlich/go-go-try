@@ -1,6 +1,5 @@
 import pIsPromise from 'p-is-promise'
-
-type ResultTuple<T> = [string?, T?]
+type ResultTuple<T> = [string, undefined] | [undefined, T]
 
 type ErrorWithMessage = {
     message: string
@@ -36,16 +35,16 @@ function getErrorMessage(error: unknown): string {
 export default function goTry<T>(
     value: (() => T) | PromiseLike<T>,
 ): ResultTuple<T> | PromiseLike<ResultTuple<T>> {
+    let unwrappedValue
     try {
-        const unwrappedValue = typeof value === 'function' ? value() : value
+        unwrappedValue = typeof value === 'function' ? value() : value
 
         if (pIsPromise(unwrappedValue)) {
             return Promise.resolve(unwrappedValue)
                 .then((value) => [undefined, value])
                 .catch((err) => [getErrorMessage(err), undefined]) as Promise<ResultTuple<T>>
         }
-
-        return [undefined, unwrappedValue as T | undefined]
+        return [undefined, unwrappedValue as T]
     } catch (err) {
         return [getErrorMessage(err), undefined]
     }
