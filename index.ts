@@ -34,11 +34,6 @@ function getErrorMessage(error: unknown): string {
 }
 
 export default function goTry<T>(
-    value: PromiseLike<T>,
-    defaultValue?: T,
-): PromiseLike<ResultTuple<T>>
-export default function goTry<T>(value: () => T): ResultTuple<T>
-export default function goTry<T>(
     value: (() => T) | PromiseLike<T>,
 ): ResultTuple<T> | PromiseLike<ResultTuple<T>> {
     try {
