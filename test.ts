@@ -10,11 +10,11 @@ describe('go-go-try', () => {
 
     it('if callback throws, value should be undefined and err should contain the error message', () => {
         const [err, value] = goTry(() => {
-            throw 'error'
+            return JSON.parse('{/')
         })
 
         expect(value).toBeUndefined()
-        expect(err).toBe('error')
+        expect(typeof err).toBe('string')
     })
 
     it('first parameter accepts promises and makes the function async', async () => {
