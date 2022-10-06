@@ -2,38 +2,32 @@ import goTry from './index'
 
 describe('go-go-try', () => {
     it(`value returned by callback is used when callback doesn't throw`, () => {
-        const [_, value] = goTry(() => 'value', 'default')
+        const [err, value] = goTry(() => 'value')
 
         expect(value).toBe('value')
+        expect(err).toBeUndefined()
     })
 
-    it('if callback throws, return default value', () => {
-        const [_, value] = goTry(() => {
-            throw new Error('error')
-        }, 'default')
-
-        expect(value).toBe('default')
-    })
-
-    it('if callback throws, return default callback value', () => {
+    it('if callback throws, value should be undefined and err should contain the error message', () => {
         const [err, value] = goTry(() => {
-            throw new Error('error')
-        }, 'default')
+            throw 'error'
+        })
 
-        expect(value).toBe('default')
+        expect(value).toBeUndefined()
         expect(err).toBe('error')
     })
 
     it('first parameter accepts promises and makes the function async', async () => {
-        const [_, value] = await goTry(Promise.resolve('value'), 'default')
+        const [err, value] = await goTry(Promise.resolve('value'))
 
         expect(value).toBe('value')
+        expect(err).toBeUndefined()
     })
 
-    it('if callback throws, return default value', async () => {
-        const [err, value] = await goTry(Promise.reject(new Error('error')), 'default')
+    it('if async callback throws, value should be undefined and err should contain the error message', async () => {
+        const [err, value] = await goTry(Promise.reject(new Error('error')))
 
-        expect(value).toBe('default')
+        expect(value).toBeUndefined()
         expect(err).toBe('error')
     })
 })

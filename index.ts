@@ -1,5 +1,5 @@
 import pIsPromise from 'p-is-promise'
-type ResultTuple<T> = [string, undefined] | [undefined, T]
+type ResultTuple<T> = readonly [undefined, T] | readonly [string, undefined]
 
 type ErrorWithMessage = {
     message: string
@@ -32,20 +32,26 @@ function getErrorMessage(error: unknown): string {
     return toErrorWithMessage(error).message
 }
 
-export default function goTry<T>(
-    value: (() => T) | PromiseLike<T>,
-): ResultTuple<T> | PromiseLike<ResultTuple<T>> {
+function isPromise<T>(p: T | PromiseLike<T>): p is PromiseLike<T> {
+    return pIsPromise(p)
+}
+
+function goTry<T>(value: PromiseLike<T>): PromiseLike<ResultTuple<T>>
+function goTry<T>(value: () => T): ResultTuple<T>
+function goTry<T>(value: (() => T) | PromiseLike<T>): ResultTuple<T> | PromiseLike<ResultTuple<T>> {
     let unwrappedValue
     try {
         unwrappedValue = typeof value === 'function' ? value() : value
 
-        if (pIsPromise(unwrappedValue)) {
+        if (isPromise(unwrappedValue)) {
             return Promise.resolve(unwrappedValue)
-                .then((value) => [undefined, value])
-                .catch((err) => [getErrorMessage(err), undefined]) as Promise<ResultTuple<T>>
+                .then((value) => [undefined, value] as const)
+                .catch((err) => [getErrorMessage(err), undefined] as const)
         }
-        return [undefined, unwrappedValue as T]
+        return [undefined, unwrappedValue] as const
     } catch (err) {
-        return [getErrorMessage(err), undefined]
+        return [getErrorMessage(err), undefined] as const
     }
 }
+
+export default goTry
