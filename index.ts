@@ -1,5 +1,5 @@
 import pIsPromise from 'p-is-promise'
-type ResultTuple<T> = readonly [undefined, T] | readonly [string, undefined]
+type ResultTuple<T> = [undefined, T] | [string, undefined]
 
 type ErrorWithMessage = {
     message: string
@@ -45,12 +45,12 @@ function goTry<T>(value: (() => T) | PromiseLike<T>): ResultTuple<T> | PromiseLi
 
         if (isPromise(unwrappedValue)) {
             return Promise.resolve(unwrappedValue)
-                .then((value) => [undefined, value] as const)
-                .catch((err) => [getErrorMessage(err), undefined] as const)
+                .then((value) => [undefined, value])
+                .catch((err) => [getErrorMessage(err), undefined]) as PromiseLike<ResultTuple<T>>
         }
-        return [undefined, unwrappedValue] as const
+        return [undefined, unwrappedValue]
     } catch (err) {
-        return [getErrorMessage(err), undefined] as const
+        return [getErrorMessage(err), undefined]
     }
 }
 
