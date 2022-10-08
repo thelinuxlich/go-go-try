@@ -1,6 +1,6 @@
 {
     "name": "go-go-try",
-    "version": "2.0.4",
+    "version": "2.0.5",
     "description": "Tries to execute a sync/async function, returns a result tuple",
     "license": "MIT",
     "repository": "thelinuxlich/go-go-try",
