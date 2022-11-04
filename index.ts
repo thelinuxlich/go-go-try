@@ -53,5 +53,27 @@ function goTry<T>(value: (() => T) | PromiseLike<T>): ResultTuple<T> | PromiseLi
         return [getErrorMessage(err), undefined] as const
     }
 }
+async function goExpect<T>(
+    value: (() => T) | PromiseLike<T>,
+    error?: (err: string) => string,
+): Promise<T> {
+    if (error === undefined) {
+        error = (e: string): string => e
+    }
+    try {
+        const unwrappedValue = typeof value === 'function' ? value() : value
+        if (isPromise(unwrappedValue)) {
+            const [err, res] = await goTry(unwrappedValue)
+            if (err !== undefined) {
+                throw new Error(err)
+            } else {
+                return res
+            }
+        }
+        return unwrappedValue
+    } catch (err) {
+        throw new Error(error(getErrorMessage(err)))
+    }
+}
 
-export default goTry
+export { goTry, goExpect }
