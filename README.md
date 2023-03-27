@@ -37,7 +37,7 @@ npm install go-go-try
 ## Usage
 
 ```ts
-import { goTry, goExpect } from 'go-go-try'
+import { goTry, goExpect, goTryRaw } from 'go-go-try'
 
 // tries to parse todos, returns empty array if it fails
 const [_, value = []] = goTry(() => JSON.parse(todos))
@@ -51,6 +51,9 @@ sentToErrorTrackingService(err)
 
 // if you still want the task to throw but with a optional custom message
 const value = await goExpect(() => JSON.parse('{/}', (err) => `Malformed JSON!`)) // value will be always T
+
+// goTry and goExpect extract the error message from the error object, if you want the raw error object, use goTryRaw
+const [err, value] = await goTryRaw(() => JSON.parse('{/}')) // err will be unknown, value will be always T
 ```
 
 ## API
