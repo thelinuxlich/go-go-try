@@ -2,9 +2,6 @@
 
 > Tries to execute a sync/async function, returns a Golang style result.
 
-[![Gzipped Size](https://img.shields.io/bundlephobia/minzip/good-try)](https://bundlephobia.com/result?p=good-try)
-[![Build Status](https://img.shields.io/github/workflow/status/astoilkov/good-try/CI)](https://github.com/astoilkov/good-try/actions/workflows/main.yml)
-
 ## Why
 
 Why not [`nice-try`](https://github.com/electerious/nice-try) with it's 70+ million downloads per month?
