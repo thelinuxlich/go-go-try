@@ -1,6 +1,6 @@
 {
 	"name": "go-go-try",
-	"version": "4.0.0",
+	"version": "4.1.0",
 	"description": "Tries to execute a sync/async function, returns a result tuple",
 	"license": "MIT",
 	"repository": "thelinuxlich/go-go-try",
@@ -22,8 +22,21 @@
 		"release": "yarn run build && np",
 		"prettier": "prettier --write --config .prettierrc.yaml {*.ts,*.json}"
 	},
-	"files": ["index.js", "src/*.js", "index.d.ts", "src/*.d.ts"],
-	"keywords": ["errors", "try", "catch", "error handling", "nice-try", "good-try", "go-try"],
+	"files": [
+		"index.js",
+		"src/*.js",
+		"index.d.ts",
+		"src/*.d.ts"
+	],
+	"keywords": [
+		"errors",
+		"try",
+		"catch",
+		"error handling",
+		"nice-try",
+		"good-try",
+		"go-try"
+	],
 	"devDependencies": {
 		"@types/jest": "^28.1.1",
 		"@typescript-eslint/eslint-plugin": "^5.27.1",
