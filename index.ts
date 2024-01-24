@@ -35,15 +35,15 @@ function getErrorMessage(error: unknown): string {
 	return toErrorWithMessage(error).message
 }
 
-function isPromise<T>(p: T | Promise<T>): p is Promise<T> {
+function isPromise<T>(p: T | PromiseLike<T>): p is PromiseLike<T> {
 	return pIsPromise(p)
 }
 
-function goTry<T>(value: Promise<T>): Promise<ResultTuple<T>>
+function goTry<T>(value: PromiseLike<T>): PromiseLike<ResultTuple<T>>
 function goTry<T>(value: () => T): ResultTuple<T>
 function goTry<T>(
-	value: (() => T) | Promise<T>,
-): ResultTuple<T> | Promise<ResultTuple<T>> {
+	value: (() => T) | PromiseLike<T>,
+): ResultTuple<T> | PromiseLike<ResultTuple<T>> {
 	let unwrappedValue
 	try {
 		unwrappedValue = typeof value === 'function' ? value() : value
@@ -59,12 +59,12 @@ function goTry<T>(
 }
 
 function goTryRaw<T, E = unknown>(
-	value: Promise<T>,
-): Promise<RawResultTuple<T, E>>
+	value: PromiseLike<T>,
+): PromiseLike<RawResultTuple<T, E>>
 function goTryRaw<T, E = unknown>(value: () => T): RawResultTuple<T, E>
 function goTryRaw<T, E = unknown>(
-	value: Promise<T> | (() => T),
-): RawResultTuple<T, E> | Promise<RawResultTuple<T, E>> {
+	value: PromiseLike<T> | (() => T),
+): RawResultTuple<T, E> | PromiseLike<RawResultTuple<T, E>> {
 	let unwrappedValue
 	try {
 		unwrappedValue = typeof value === 'function' ? value() : value
@@ -80,7 +80,7 @@ function goTryRaw<T, E = unknown>(
 }
 
 async function goExpect<T>(
-	value: (() => T) | Promise<T>,
+	value: (() => T) | PromiseLike<T>,
 	error?: (err: string) => string,
 ): Promise<T> {
 	const _error = error ?? ((e: string): string => e)
