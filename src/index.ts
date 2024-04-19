@@ -44,7 +44,7 @@ function goTry<T>(value: () => T): ResultTuple<T>
 function goTry<T>(
 	value: (() => T) | PromiseLike<T>,
 ): ResultTuple<T> | PromiseLike<ResultTuple<T>> {
-	let unwrappedValue
+	let unwrappedValue: T | PromiseLike<T>
 	try {
 		unwrappedValue = typeof value === 'function' ? value() : value
 		if (isPromise(unwrappedValue)) {
@@ -65,7 +65,7 @@ function goTryRaw<T, E = unknown>(value: () => T): RawResultTuple<T, E>
 function goTryRaw<T, E = unknown>(
 	value: PromiseLike<T> | (() => T),
 ): RawResultTuple<T, E> | PromiseLike<RawResultTuple<T, E>> {
-	let unwrappedValue
+	let unwrappedValue: T | PromiseLike<T>
 	try {
 		unwrappedValue = typeof value === 'function' ? value() : value
 		if (isPromise(unwrappedValue)) {

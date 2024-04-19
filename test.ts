@@ -1,4 +1,4 @@
-import { goExpect, goTry, goTryRaw } from './index'
+import { goExpect, goTry, goTryRaw } from './src/index'
 
 describe('go-go-try', () => {
 	it(`value returned by callback is used when callback doesn't throw`, async () => {
