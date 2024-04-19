@@ -48,7 +48,7 @@
 		"confusing-browser-globals": "^1.0.11",
 		"jest": "^28.1.1",
 		"jest-environment-jsdom": "^28.1.1",
-		"np": "^7.6.1",
+		"np": "^10.0.5",
 		"ts-jest": "^28.0.4",
 		"ts-node": "^10.8.2",
 		"typescript": "^5.4.5"
