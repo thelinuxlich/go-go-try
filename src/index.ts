@@ -1,9 +1,3 @@
-import pIsPromise from 'p-is-promise'
-type ResultTuple<T> = readonly [undefined, T] | readonly [string, undefined]
-type RawResultTuple<T, E = unknown> =
-	| readonly [undefined, T]
-	| readonly [E, undefined]
-
 type ErrorWithMessage = {
 	message: string
 }
@@ -35,68 +29,32 @@ function getErrorMessage(error: unknown): string {
 	return toErrorWithMessage(error).message
 }
 
-function isPromise<T>(p: T | PromiseLike<T>): p is PromiseLike<T> {
-	return pIsPromise(p)
+function goTry<T>(value: PromiseLike<T>) {
+	return Promise.resolve(value)
+		.then((value) => [undefined, value] as const)
+		.catch((err) => [getErrorMessage(err), undefined] as const)
 }
 
-function goTry<T>(value: PromiseLike<T>): PromiseLike<ResultTuple<T>>
-function goTry<T>(value: () => T): ResultTuple<T>
-function goTry<T>(
-	value: (() => T) | PromiseLike<T>,
-): ResultTuple<T> | PromiseLike<ResultTuple<T>> {
-	let unwrappedValue: T | PromiseLike<T>
+function goTrySync<T>(value: () => T) {
 	try {
-		unwrappedValue = typeof value === 'function' ? value() : value
-		if (isPromise(unwrappedValue)) {
-			return Promise.resolve(unwrappedValue)
-				.then((value) => [undefined, value] as const)
-				.catch((err) => [getErrorMessage(err), undefined] as const)
-		}
-		return [undefined, unwrappedValue] as const
+		return [undefined, value()] as const
 	} catch (err) {
 		return [getErrorMessage(err), undefined] as const
 	}
 }
 
-function goTryRaw<T, E = unknown>(
-	value: PromiseLike<T>,
-): PromiseLike<RawResultTuple<T, E>>
-function goTryRaw<T, E = unknown>(value: () => T): RawResultTuple<T, E>
-function goTryRaw<T, E = unknown>(
-	value: PromiseLike<T> | (() => T),
-): RawResultTuple<T, E> | PromiseLike<RawResultTuple<T, E>> {
-	let unwrappedValue: T | PromiseLike<T>
+function goTryRaw<E = unknown, T = unknown>(value: PromiseLike<T>) {
+	return Promise.resolve(value)
+		.then((value) => [undefined, value] as const)
+		.catch((err) => [err as E, undefined] as const)
+}
+
+function goTryRawSync<E = unknown, T = unknown>(value: () => T) {
 	try {
-		unwrappedValue = typeof value === 'function' ? value() : value
-		if (isPromise(unwrappedValue)) {
-			return Promise.resolve(unwrappedValue)
-				.then((value) => [undefined, value] as const)
-				.catch((err) => [err, undefined] as const)
-		}
-		return [undefined, unwrappedValue] as const
+		return [undefined, value()] as const
 	} catch (err) {
-		return [err, undefined] as const as RawResultTuple<T, E>
+		return [err as E, undefined] as const
 	}
 }
 
-async function goExpect<T>(
-	value: (() => T) | PromiseLike<T>,
-	error?: (err: string) => string,
-): Promise<T> {
-	const _error = error ?? ((e: string): string => e)
-	try {
-		const unwrappedValue = typeof value === 'function' ? value() : value
-		if (isPromise(unwrappedValue)) {
-			const [err, res] = await goTry(unwrappedValue)
-			if (err !== undefined) {
-				throw new Error(err)
-			}
-			return res
-		}
-		return unwrappedValue
-	} catch (err) {
-		throw new Error(_error(getErrorMessage(err)))
-	}
-}
-
-export { goTry, goExpect, goTryRaw }
+export { goTry, goTryRaw, goTrySync, goTryRawSync }

@@ -4,12 +4,11 @@
 
 ## Why
 
-Why not [`nice-try`](https://github.com/electerious/nice-try) with it's 70+ million downloads per month?
-
--   `go-go-try` supports async functions.
--   `go-go-try` allows you to capture the thrown error.
--   `go-go-try` is written in TypeScript. The types are written in a way that reduce developer errors.
--   `go-go-try` is inspired by Golang error catching.
+-   Supports sync/async functions.
+-   Allows you to capture the thrown error.
+-   Written in TypeScript. The types are written in a way that reduce developer errors.
+-   Inspired by Golang error catching.
+-   Zero dependencies.
 
 Why not just `try`/`catch`?
 
@@ -34,33 +33,35 @@ npm install go-go-try
 ## Usage
 
 ```ts
-import { goTry, goExpect, goTryRaw } from 'go-go-try'
+import { goTry, goTryRaw, goTrySync, goTryRawSync } from 'go-go-try'
 
 // tries to parse todos, returns empty array if it fails
-const [_, value = []] = goTry(() => JSON.parse(todos))
+const [_, value = []] = goTrySync(() => JSON.parse(todos))
 
 // fetch todos, on error, fallback to empty array
 const [_, todos = []] = await goTry(fetchTodos())
 
 // fetch todos, fallback to empty array, send error to your error tracking service
-const [err, todos = []] = await goTry(fetchTodos())
+const [err, todos = []] = await goTry(fetchTodos()) // err is string | undefined
 sentToErrorTrackingService(err)
 
-// if you still want the task to throw but with a optional custom message
-const value = await goExpect(() => JSON.parse('{/}', (err) => `Malformed JSON!`)) // value will be always T
+// goTry extracts the error message from the error object, if you want the raw error object, use goTryRaw/goTryRawSync
+const [err, value] = goTryRawSync<Error>(() => JSON.parse('{/}')) // err will be unknown, value will be always T and you can add a Error type as the first generic argument to avoid checking `instanceof Error`
 
-// goTry and goExpect extract the error message from the error object, if you want the raw error object, use goTryRaw
-const [err, value] = await goTryRaw(() => JSON.parse('{/}')) // err will be unknown, value will be always T
+// fetch todos, fallback to empty array, send error to your error tracking service
+const [err, todos = []] = await goTryRaw<SomeErrorType>(fetchTodos()) // err is SomeErrorType | undefined
+sentToErrorTrackingService(err)
 ```
 
 ## API
 
 **First parameter** accepts:
 
--   synchronous function `goTry(() => JSON.parse(value))`
 -   asynchronous function / Promise
 
 **Returns** a tuple with the possible error and result (Golang style)
+
+Alternatively, you can use the `goTrySync` and `goTryRawSync` functions to get the result and error for sync functions.
 
 If you use TypeScript, the types are well defined and won't let you make a mistake.
 

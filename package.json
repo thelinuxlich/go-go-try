@@ -1,6 +1,6 @@
 {
 	"name": "go-go-try",
-	"version": "4.1.2",
+	"version": "5.0.0",
 	"description": "Tries to execute a sync/async function, returns a result tuple",
 	"license": "MIT",
 	"repository": "thelinuxlich/go-go-try",
@@ -22,14 +22,13 @@
 			"default": "./dist/index.mjs"
 		}
 	},
-	"sideEffects": false,
 	"engines": {
-		"node": ">=12"
+		"node": ">=16"
 	},
 	"scripts": {
 		"build": "npx pkgroll",
 		"lint": "biome lint --apply src/*.ts",
-		"test": "yarn run build && yarn run lint && NODE_OPTIONS=--experimental-vm-modules jest --coverage --coverageReporters=text"
+		"test": "npm run build && npm run lint && tsx test.ts"
 	},
 	"keywords": [
 		"errors",
@@ -43,17 +42,8 @@
 		"go-try"
 	],
 	"devDependencies": {
-		"@biomejs/biome": "^1.7.0",
-		"@types/jest": "^28.1.1",
-		"confusing-browser-globals": "^1.0.11",
-		"jest": "^28.1.1",
-		"jest-environment-jsdom": "^28.1.1",
-		"np": "^7.6.1",
-		"ts-jest": "^28.0.4",
-		"ts-node": "^10.8.2",
-		"typescript": "^5.4.5"
-	},
-	"dependencies": {
-		"p-is-promise": "^4.0.0"
+		"@biomejs/biome": "^1.7.3",
+		"typescript": "^5.4.5",
+		"tsx": "^4.9.3"
 	}
 }
