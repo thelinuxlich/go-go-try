@@ -50,7 +50,7 @@ const [err, value] = goTryRawSync<Error>(() => JSON.parse('{/}')) // err will be
 
 // fetch todos, fallback to empty array, send error to your error tracking service
 const [err, todos = []] = await goTryRaw<SomeErrorType>(fetchTodos()) // err is SomeErrorType | undefined
-if(err) sendToErrorTrackingService(err)
+if (err) sendToErrorTrackingService(err)
 ```
 
 ## API
