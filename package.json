@@ -1,49 +1,50 @@
 {
-	"name": "go-go-try",
-	"version": "5.0.0",
-	"description": "Tries to execute a sync/async function, returns a result tuple",
-	"license": "MIT",
-	"repository": "thelinuxlich/go-go-try",
-	"author": {
-		"name": "Alisson Cavalcante Agiani",
-		"email": "thelinuxlich@gmail.com"
-	},
-	"type": "module",
-	"main": "./dist/index.cjs",
-	"module": "./dist/index.mjs",
-	"types": "./dist/index.d.mts",
-	"exports": {
-		"require": {
-			"types": "./dist/index.d.cts",
-			"default": "./dist/index.cjs"
-		},
-		"import": {
-			"types": "./dist/index.d.mts",
-			"default": "./dist/index.mjs"
-		}
-	},
-	"engines": {
-		"node": ">=16"
-	},
-	"scripts": {
-		"build": "npx pkgroll",
-		"lint": "biome lint --apply src/*.ts",
-		"test": "npm run build && npm run lint && tsx test.ts"
-	},
-	"keywords": [
-		"errors",
-		"try",
-		"catch",
-		"error handling",
-		"nice-try",
-		"good-try",
-		"go-go-try",
-		"gotry",
-		"go-try"
-	],
-	"devDependencies": {
-		"@biomejs/biome": "^1.7.3",
-		"typescript": "^5.4.5",
-		"tsx": "^4.9.3"
-	}
+  "name": "go-go-try",
+  "version": "6.0.0",
+  "description": "Tries to execute a sync/async function, returns a result tuple",
+  "license": "MIT",
+  "repository": "thelinuxlich/go-go-try",
+  "author": {
+    "name": "Alisson Cavalcante Agiani",
+    "email": "thelinuxlich@gmail.com"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    "require": {
+      "types": "./dist/index.d.cts",
+      "default": "./dist/index.cjs"
+    },
+    "import": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "build": "pkgroll",
+    "lint": "biome lint --write src/*.ts",
+    "test": "npm run build && npm run lint && tsx test.ts"
+  },
+  "keywords": [
+    "errors",
+    "try",
+    "catch",
+    "error handling",
+    "nice-try",
+    "good-try",
+    "go-go-try",
+    "gotry",
+    "go-try"
+  ],
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "pkgroll": "^2.12.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  }
 }

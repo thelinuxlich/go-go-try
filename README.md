@@ -33,10 +33,10 @@ npm install go-go-try
 ## Usage
 
 ```ts
-import { goTry, goTryRaw, goTrySync, goTryRawSync } from 'go-go-try'
+import { goTry, goTryRaw } from 'go-go-try'
 
 // tries to parse todos, returns empty array if it fails
-const [_, value = []] = goTrySync(() => JSON.parse(todos))
+const [_, value = []] = goTry(() => JSON.parse(todos))
 
 // fetch todos, on error, fallback to empty array
 const [_, todos = []] = await goTry(fetchTodos())
@@ -45,8 +45,8 @@ const [_, todos = []] = await goTry(fetchTodos())
 const [err, todos = []] = await goTry(fetchTodos()) // err is string | undefined
 if (err) sendToErrorTrackingService(err)
 
-// goTry extracts the error message from the error object, if you want the raw error object, use goTryRaw/goTryRawSync
-const [err, value] = goTryRawSync<Error>(() => JSON.parse('{/}')) // err will be unknown, value will be always T and you can add a Error type as the first generic argument to avoid checking `instanceof Error`
+// goTry extracts the error message from the error object, if you want the raw error object, use goTryRaw
+const [err, value] = goTryRaw<Error>(() => JSON.parse('{/}')) // err will be unknown, value will be always T and you can add a Error type as the first generic argument to avoid checking `instanceof Error`
 
 // fetch todos, fallback to empty array, send error to your error tracking service
 const [err, todos = []] = await goTryRaw<SomeErrorType>(fetchTodos()) // err is SomeErrorType | undefined
@@ -57,11 +57,10 @@ if (err) sendToErrorTrackingService(err)
 
 **First parameter** accepts:
 
--   asynchronous function / Promise
+-   synchronous/asynchronous function / Promise
 
 **Returns** a tuple with the possible error and result (Golang style)
 
-Alternatively, you can use the `goTrySync` and `goTryRawSync` functions to get the result and error for sync functions.
 
 If you use TypeScript, the types are well defined and won't let you make a mistake.
 

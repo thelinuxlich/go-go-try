@@ -1,43 +1,57 @@
 'use strict';
 
-function isErrorWithMessage(error) {
-  return typeof error === "object" && error !== null && "message" in error && typeof error.message === "string";
+function isSuccess(result) {
+  return result[0] === void 0;
 }
-function toErrorWithMessage(maybeError) {
-  if (isErrorWithMessage(maybeError)) {
-    return maybeError;
-  }
-  try {
-    return new Error(JSON.stringify(maybeError));
-  } catch {
-    return new Error(String(maybeError));
-  }
+function isFailure(result) {
+  return result[0] !== void 0;
+}
+function success(value) {
+  return [void 0, value];
+}
+function failure(error) {
+  return [error, void 0];
 }
 function getErrorMessage(error) {
-  return toErrorWithMessage(error).message;
+  if (typeof error === "string") return error;
+  if (typeof error === "object" && error !== null && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+function isPromiseLike(value) {
+  return typeof value === "object" && value !== null && "then" in value && typeof value.then === "function";
 }
 function goTry(value) {
-  return Promise.resolve(value).then((value2) => [void 0, value2]).catch((err) => [getErrorMessage(err), void 0]);
-}
-function goTrySync(value) {
+  if (isPromiseLike(value)) {
+    return Promise.resolve(value).then((value2) => success(value2)).catch((err) => failure(getErrorMessage(err)));
+  }
   try {
-    return [void 0, value()];
+    const result = typeof value === "function" ? value() : value;
+    return success(result);
   } catch (err) {
-    return [getErrorMessage(err), void 0];
+    return failure(getErrorMessage(err));
   }
 }
 function goTryRaw(value) {
-  return Promise.resolve(value).then((value2) => [void 0, value2]).catch((err) => [err, void 0]);
-}
-function goTryRawSync(value) {
+  if (isPromiseLike(value)) {
+    return Promise.resolve(value).then((value2) => success(value2)).catch((err) => failure(err));
+  }
   try {
-    return [void 0, value()];
+    const result = typeof value === "function" ? value() : value;
+    return success(result);
   } catch (err) {
-    return [err, void 0];
+    return failure(err);
   }
 }
 
+exports.failure = failure;
 exports.goTry = goTry;
 exports.goTryRaw = goTryRaw;
-exports.goTryRawSync = goTryRawSync;
-exports.goTrySync = goTrySync;
+exports.isFailure = isFailure;
+exports.isSuccess = isSuccess;
+exports.success = success;
