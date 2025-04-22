@@ -5,6 +5,7 @@
         "esModuleInterop": true,
         "moduleResolution": "node",
         "declaration": true,
+        "declarationMap": true,
         "isolatedModules": true,
         "strict": true,
         "noUnusedLocals": true,
@@ -15,7 +16,6 @@
         "forceConsistentCasingInFileNames": true
     },
     "include": [
-        "src/**/*.ts",
-        "src/**/*.d.ts"
+        "src/**/*"
     ]
 }
