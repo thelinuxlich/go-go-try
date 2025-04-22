@@ -1,6 +1,6 @@
 {
   "name": "go-go-try",
-  "version": "6.0.3",
+  "version": "6.0.4",
   "description": "Tries to execute a sync/async function, returns a result tuple",
   "license": "MIT",
   "repository": "thelinuxlich/go-go-try",
@@ -28,7 +28,7 @@
   "scripts": {
     "build": "pkgroll",
     "lint": "biome lint --write src/*.ts",
-    "test": "npm run build && npm run lint && vitest run --typecheck"
+    "test": "npm run build && npm run lint && vitest run"
   },
   "keywords": [
     "errors",

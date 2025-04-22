@@ -1,4 +1,4 @@
-/// <reference path="./types.d.ts" />
+/// <reference path="types.d.ts" />
 export type Success<T> = readonly [undefined, T]
 export type Failure<E> = readonly [E, undefined]
 export type Result<E, T> = Success<T> | Failure<E>
