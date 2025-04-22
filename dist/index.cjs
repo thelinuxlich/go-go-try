@@ -23,26 +23,26 @@ function getErrorMessage(error) {
     return String(error);
   }
 }
-function isPromiseLike(value) {
+function isPromise(value) {
   return typeof value === "object" && value !== null && "then" in value && typeof value.then === "function";
 }
 function goTry(value) {
-  if (isPromiseLike(value)) {
-    return Promise.resolve(value).then((value2) => success(value2)).catch((err) => failure(getErrorMessage(err)));
-  }
   try {
     const result = typeof value === "function" ? value() : value;
+    if (isPromise(result)) {
+      return result.then((resolvedValue) => success(resolvedValue)).catch((err) => failure(getErrorMessage(err)));
+    }
     return success(result);
   } catch (err) {
     return failure(getErrorMessage(err));
   }
 }
 function goTryRaw(value) {
-  if (isPromiseLike(value)) {
-    return Promise.resolve(value).then((value2) => success(value2)).catch((err) => failure(err));
-  }
   try {
     const result = typeof value === "function" ? value() : value;
+    if (isPromise(result)) {
+      return result.then((resolvedValue) => success(resolvedValue)).catch((err) => failure(err));
+    }
     return success(result);
   } catch (err) {
     return failure(err);

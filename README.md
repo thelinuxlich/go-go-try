@@ -46,10 +46,10 @@ const [err, todos = []] = await goTry(fetchTodos()) // err is string | undefined
 if (err) sendToErrorTrackingService(err)
 
 // goTry extracts the error message from the error object, if you want the raw error object, use goTryRaw
-const [err, value] = goTryRaw<Error>(() => JSON.parse('{/}')) // err will be unknown, value will be always T and you can add a Error type as the first generic argument to avoid checking `instanceof Error`
+const [err, value] = goTryRaw(() => JSON.parse('{/}')) // err will be Error, value will be always T
 
 // fetch todos, fallback to empty array, send error to your error tracking service
-const [err, todos = []] = await goTryRaw<SomeErrorType>(fetchTodos()) // err is SomeErrorType | undefined
+const [err, todos = []] = await goTryRaw(fetchTodos()) // err is Error | undefined
 if (err) sendToErrorTrackingService(err)
 ```
 

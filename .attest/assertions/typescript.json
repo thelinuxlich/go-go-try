@@ -1,0 +1,1804 @@
+{
+    "index.test.ts": [
+        {
+            "location": {
+                "start": {
+                    "line": 173,
+                    "char": 3
+                },
+                "end": {
+                    "line": 173,
+                    "char": 41
+                }
+            },
+            "args": [
+                {
+                    "type": "Result<string, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "Result<string, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 177,
+                    "char": 3
+                },
+                "end": {
+                    "line": 177,
+                    "char": 34
+                }
+            },
+            "args": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 178,
+                    "char": 3
+                },
+                "end": {
+                    "line": 178,
+                    "char": 36
+                }
+            },
+            "args": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 182,
+                    "char": 4
+                },
+                "end": {
+                    "line": 182,
+                    "char": 25
+                }
+            },
+            "args": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 184,
+                    "char": 4
+                },
+                "end": {
+                    "line": 184,
+                    "char": 28
+                }
+            },
+            "args": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 192,
+                    "char": 3
+                },
+                "end": {
+                    "line": 192,
+                    "char": 41
+                }
+            },
+            "args": [
+                {
+                    "type": "Result<string, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "Result<string, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 196,
+                    "char": 3
+                },
+                "end": {
+                    "line": 196,
+                    "char": 34
+                }
+            },
+            "args": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 197,
+                    "char": 3
+                },
+                "end": {
+                    "line": 197,
+                    "char": 36
+                }
+            },
+            "args": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 201,
+                    "char": 4
+                },
+                "end": {
+                    "line": 201,
+                    "char": 25
+                }
+            },
+            "args": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 203,
+                    "char": 4
+                },
+                "end": {
+                    "line": 203,
+                    "char": 28
+                }
+            },
+            "args": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 212,
+                    "char": 3
+                },
+                "end": {
+                    "line": 212,
+                    "char": 41
+                }
+            },
+            "args": [
+                {
+                    "type": "Result<string, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "Result<string, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 216,
+                    "char": 3
+                },
+                "end": {
+                    "line": 216,
+                    "char": 34
+                }
+            },
+            "args": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 217,
+                    "char": 3
+                },
+                "end": {
+                    "line": 217,
+                    "char": 36
+                }
+            },
+            "args": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 221,
+                    "char": 4
+                },
+                "end": {
+                    "line": 221,
+                    "char": 25
+                }
+            },
+            "args": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 223,
+                    "char": 4
+                },
+                "end": {
+                    "line": 223,
+                    "char": 28
+                }
+            },
+            "args": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 232,
+                    "char": 3
+                },
+                "end": {
+                    "line": 232,
+                    "char": 41
+                }
+            },
+            "args": [
+                {
+                    "type": "Result<string, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "Result<string, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 236,
+                    "char": 3
+                },
+                "end": {
+                    "line": 236,
+                    "char": 34
+                }
+            },
+            "args": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 237,
+                    "char": 3
+                },
+                "end": {
+                    "line": 237,
+                    "char": 36
+                }
+            },
+            "args": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 241,
+                    "char": 4
+                },
+                "end": {
+                    "line": 241,
+                    "char": 25
+                }
+            },
+            "args": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 243,
+                    "char": 4
+                },
+                "end": {
+                    "line": 243,
+                    "char": 28
+                }
+            },
+            "args": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 254,
+                    "char": 3
+                },
+                "end": {
+                    "line": 254,
+                    "char": 40
+                }
+            },
+            "args": [
+                {
+                    "type": "Result<Error, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "Result<Error, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 258,
+                    "char": 3
+                },
+                "end": {
+                    "line": 258,
+                    "char": 33
+                }
+            },
+            "args": [
+                {
+                    "type": "Error | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "Error | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 259,
+                    "char": 3
+                },
+                "end": {
+                    "line": 259,
+                    "char": 36
+                }
+            },
+            "args": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 263,
+                    "char": 4
+                },
+                "end": {
+                    "line": 263,
+                    "char": 25
+                }
+            },
+            "args": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 265,
+                    "char": 4
+                },
+                "end": {
+                    "line": 265,
+                    "char": 28
+                }
+            },
+            "args": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 273,
+                    "char": 3
+                },
+                "end": {
+                    "line": 273,
+                    "char": 40
+                }
+            },
+            "args": [
+                {
+                    "type": "Result<Error, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "Result<Error, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 277,
+                    "char": 3
+                },
+                "end": {
+                    "line": 277,
+                    "char": 33
+                }
+            },
+            "args": [
+                {
+                    "type": "Error | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "Error | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 278,
+                    "char": 3
+                },
+                "end": {
+                    "line": 278,
+                    "char": 36
+                }
+            },
+            "args": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 282,
+                    "char": 4
+                },
+                "end": {
+                    "line": 282,
+                    "char": 25
+                }
+            },
+            "args": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 284,
+                    "char": 4
+                },
+                "end": {
+                    "line": 284,
+                    "char": 28
+                }
+            },
+            "args": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 292,
+                    "char": 3
+                },
+                "end": {
+                    "line": 292,
+                    "char": 40
+                }
+            },
+            "args": [
+                {
+                    "type": "Result<Error, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "Result<Error, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 296,
+                    "char": 3
+                },
+                "end": {
+                    "line": 296,
+                    "char": 33
+                }
+            },
+            "args": [
+                {
+                    "type": "Error | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "Error | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 297,
+                    "char": 3
+                },
+                "end": {
+                    "line": 297,
+                    "char": 36
+                }
+            },
+            "args": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 301,
+                    "char": 4
+                },
+                "end": {
+                    "line": 301,
+                    "char": 25
+                }
+            },
+            "args": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 303,
+                    "char": 4
+                },
+                "end": {
+                    "line": 303,
+                    "char": 28
+                }
+            },
+            "args": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 312,
+                    "char": 3
+                },
+                "end": {
+                    "line": 312,
+                    "char": 40
+                }
+            },
+            "args": [
+                {
+                    "type": "Result<Error, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "Result<Error, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 316,
+                    "char": 3
+                },
+                "end": {
+                    "line": 316,
+                    "char": 33
+                }
+            },
+            "args": [
+                {
+                    "type": "Error | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "Error | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 317,
+                    "char": 3
+                },
+                "end": {
+                    "line": 317,
+                    "char": 36
+                }
+            },
+            "args": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 321,
+                    "char": 4
+                },
+                "end": {
+                    "line": 321,
+                    "char": 25
+                }
+            },
+            "args": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 323,
+                    "char": 4
+                },
+                "end": {
+                    "line": 323,
+                    "char": 28
+                }
+            },
+            "args": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 332,
+                    "char": 3
+                },
+                "end": {
+                    "line": 332,
+                    "char": 40
+                }
+            },
+            "args": [
+                {
+                    "type": "Result<Error, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "Result<Error, string>",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 336,
+                    "char": 3
+                },
+                "end": {
+                    "line": 336,
+                    "char": 33
+                }
+            },
+            "args": [
+                {
+                    "type": "Error | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "Error | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 337,
+                    "char": 3
+                },
+                "end": {
+                    "line": 337,
+                    "char": 36
+                }
+            },
+            "args": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string | undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 341,
+                    "char": 4
+                },
+                "end": {
+                    "line": 341,
+                    "char": 25
+                }
+            },
+            "args": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "string",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        },
+        {
+            "location": {
+                "start": {
+                    "line": 343,
+                    "char": 4
+                },
+                "end": {
+                    "line": 343,
+                    "char": 28
+                }
+            },
+            "args": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "typeArgs": [
+                {
+                    "type": "undefined",
+                    "relationships": {
+                        "args": [
+                            "equality"
+                        ],
+                        "typeArgs": [
+                            "equality"
+                        ]
+                    }
+                }
+            ],
+            "errors": [],
+            "completions": {}
+        }
+    ]
+}
