@@ -13,5 +13,9 @@
         "noUncheckedIndexedAccess": true,
         "noFallthroughCasesInSwitch": true,
         "forceConsistentCasingInFileNames": true
-    }
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.d.ts"
+    ]
 }
