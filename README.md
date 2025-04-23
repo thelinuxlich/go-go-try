@@ -46,7 +46,7 @@ const [err, todos = []] = await goTry(fetchTodos()) // err is string | undefined
 if (err) sendToErrorTrackingService(err)
 
 // goTry extracts the error message from the error object, if you want the raw error object, use goTryRaw
-const [err, value] = goTryRaw(() => JSON.parse('{/}')) // err will be Error, value will be always T
+const [err, value] = goTryRaw(() => JSON.parse('{/}')) // err is Error | undefined, value is T | undefined
 
 // fetch todos, fallback to empty array, send error to your error tracking service
 const [err, todos = []] = await goTryRaw(fetchTodos()) // err is Error | undefined
@@ -59,11 +59,7 @@ if (err) sendToErrorTrackingService(err)
 
 -   synchronous/asynchronous function / Promise
 
-**Returns** a tuple with the possible error and result (Golang style)
+**Returns** a tuple with the possible error and result as `[Err | undefined, T | undefined]` (Golang style)
 
 
 If you use TypeScript, the types are well defined and won't let you make a mistake.
-
-## Inspiration
-
--   This library started as a fork of [good-try](https://github.com/astoilkov/good-try) but diverged a lot so I decided to rename it
