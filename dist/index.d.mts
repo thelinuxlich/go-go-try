@@ -26,6 +26,8 @@ declare function failure<E>(error: E): Failure<E>;
  * // With a promise
  * const [err, result] = await goTry(fetch('https://api.example.com/data'));
  */
+declare function goTry<T>(fn: () => never): Result<string, never>;
+declare function goTry<T>(fn: () => Promise<T>): Promise<Result<string, T>>;
 declare function goTry<T>(promise: Promise<T>): Promise<Result<string, T>>;
 declare function goTry<T>(fn: () => T): Result<string, T>;
 declare function goTry<T>(value: T): Result<string, T>;
@@ -50,6 +52,8 @@ declare function goTry<T>(value: T): Result<string, T>;
  * // With a promise
  * const [err, result] = await goTryRaw(fetch('https://api.example.com/data'));
  */
+declare function goTryRaw<T, E = Error>(fn: () => never): Result<E, never>;
+declare function goTryRaw<T, E = Error>(fn: () => Promise<T>): Promise<Result<E, T>>;
 declare function goTryRaw<T, E = Error>(promise: Promise<T>): Promise<Result<E, T>>;
 declare function goTryRaw<T, E = Error>(fn: () => T): Result<E, T>;
 declare function goTryRaw<T, E = Error>(value: T): Result<E, T>;
