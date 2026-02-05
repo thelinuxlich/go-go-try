@@ -99,8 +99,8 @@ const [errors, results] = await goTryAll([
   fetchComments(userId)
 ])
 
-// errors is (string | undefined)[]
-// results is (User | Posts | Comments | undefined)[]
+// errors is [string | undefined, string | undefined, string | undefined]
+// results is [User | undefined, Posts | undefined, Comments | undefined]
 
 const [user, posts, comments] = results
 ```
@@ -244,14 +244,58 @@ Like `goTry` but returns the raw Error object instead of just the message.
 function goTryRaw<T, E = Error>(value: T | Promise<T> | (() => T | Promise<T>)): Result<E, T> | Promise<Result<E, T>>
 ```
 
-### `goTryAll<T>(promises)`
+### `goTryAll<T>(items, options?)`
 
-Executes multiple promises in parallel. Returns a tuple of `[errors, results]`.
+Executes multiple promises or factory functions with optional concurrency limit. Returns a tuple of `[errors, results]` with fixed tuple types preserving input order.
 
 ```ts
+interface GoTryAllOptions {
+  concurrency?: number  // 0 = unlimited (default), 1 = sequential, N = max concurrent
+}
+
 function goTryAll<T extends readonly unknown[]>(
-  promises: { [K in keyof T]: Promise<T[K]> }
-): Promise<[string[] | undefined, { [K in keyof T]: T[K] | undefined }]>
+  items: { [K in keyof T]: Promise<T[K]> | (() => Promise<T[K]>) },
+  options?: GoTryAllOptions
+): Promise<[{ [K in keyof T]: string | undefined }, { [K in keyof T]: T[K] | undefined }]>
+```
+
+**Promise mode** (pass promises directly):
+```ts
+// Run all in parallel (default):
+const [errors, results] = await goTryAll([
+  fetchUser(1),      // Promise<User>
+  fetchUser(2),      // Promise<User>
+  fetchUser(3),      // Promise<User>
+])
+// errors: [string | undefined, string | undefined, string | undefined]
+// results: [User | undefined, User | undefined, User | undefined]
+```
+
+**Factory mode** (pass functions that return promises):
+```ts
+// True lazy execution - factories only called when a slot is available
+const [errors, results] = await goTryAll([
+  () => fetchUser(1),  // Only called when concurrency slot available
+  () => fetchUser(2),  // Only called when concurrency slot available
+  () => fetchUser(3),  // Only called when concurrency slot available
+  () => fetchUser(4),  // Only called when concurrency slot available
+], { concurrency: 2 })
+
+// Use factory mode when you need to:
+// - Rate limit API calls (don't start HTTP requests until allowed)
+// - Control database connection limits
+// - Limit expensive computation resources
+```
+
+### `goTryAllRaw<T>(items, options?)`
+
+Like `goTryAll`, but returns raw Error objects instead of error messages.
+
+```ts
+function goTryAllRaw<T extends readonly unknown[]>(
+  items: { [K in keyof T]: Promise<T[K]> | (() => Promise<T[K]>) },
+  options?: GoTryAllOptions
+): Promise<[{ [K in keyof T]: Error | undefined }, { [K in keyof T]: T[K] | undefined }]>
 ```
 
 ### `goTryOr<T>(value, defaultValue)`

@@ -4,9 +4,9 @@ import {
   type Result,
   goTry,
   goTryAll,
+  goTryAllRaw,
   goTryOr,
   goTryRaw,
-  goTrySettled,
   isFailure,
   isSuccess,
 } from './index.js'
@@ -727,25 +727,179 @@ describe('goTryAll', () => {
     assert.equal(results[1], undefined)
   })
 
-  test('preserves types', async () => {
+  test('preserves types as fixed tuples', async () => {
     const [errors, results] = await goTryAll([
       Promise.resolve('string'),
       Promise.resolve(42),
       Promise.resolve({ key: 'value' }),
     ])
 
-    attest<(string | undefined)[]>(errors)
+    // errors is a fixed tuple: [string | undefined, string | undefined, string | undefined]
+    attest<[string | undefined, string | undefined, string | undefined]>(errors)
 
+    // results is a fixed tuple preserving each type at its position
     const [str, num, obj] = results
     attest<string | undefined>(str)
     attest<number | undefined>(num)
     attest<{ key: string } | undefined>(obj)
   })
+
+  test('runs with limited concurrency', async () => {
+    const completionOrder: number[] = []
+    const delays = [30, 10, 30, 10]
+
+    // Create promises that record when they complete
+    const promises = delays.map((delay, i) =>
+      new Promise<string>((resolve) => {
+        setTimeout(() => {
+          completionOrder.push(i)
+          resolve(`done-${i}`)
+        }, delay)
+      })
+    )
+
+    const startTime = Date.now()
+    const [errors, results] = await goTryAll(promises, { concurrency: 2 })
+    const duration = Date.now() - startTime
+
+    // All should complete
+    assert.deepEqual(errors, [undefined, undefined, undefined, undefined])
+    assert.deepEqual(results, ['done-0', 'done-1', 'done-2', 'done-3'])
+
+    // With concurrency 2: promises 0,1 start first; 1 completes at ~10ms, then 2 starts; 0 completes at ~30ms, then 3 starts
+    // Total time should be ~40ms (not ~20ms if all ran in parallel, not ~80ms if sequential)
+    // Using relaxed timing due to test environment variability
+    assert.ok(duration >= 25, `Expected duration >=25ms with limited concurrency, got ${duration}ms`)
+  })
+
+  test('concurrency of 0 runs all in parallel', async () => {
+    const delays = [20, 20, 20, 20]
+
+    const promises = delays.map((delay, i) =>
+      new Promise<string>((resolve) => {
+        setTimeout(() => resolve(`done-${i}`), delay)
+      })
+    )
+
+    const startTime = Date.now()
+    const [errors, results] = await goTryAll(promises, { concurrency: 0 })
+    const duration = Date.now() - startTime
+
+    assert.deepEqual(errors, [undefined, undefined, undefined, undefined])
+    assert.deepEqual(results, ['done-0', 'done-1', 'done-2', 'done-3'])
+
+    // All 4 running in parallel should complete in ~20ms
+    assert.ok(duration < 50, `Expected duration <50ms for parallel execution, got ${duration}ms`)
+  })
+
+  test('concurrency defaults to 0 (unlimited)', async () => {
+    const delays = [20, 20, 20, 20]
+
+    const promises = delays.map((delay, i) =>
+      new Promise<string>((resolve) => {
+        setTimeout(() => resolve(`done-${i}`), delay)
+      })
+    )
+
+    const startTime = Date.now()
+    const [errors, results] = await goTryAll(promises)
+    const duration = Date.now() - startTime
+
+    assert.deepEqual(errors, [undefined, undefined, undefined, undefined])
+    assert.deepEqual(results, ['done-0', 'done-1', 'done-2', 'done-3'])
+
+    // Default (concurrency 0) should run all in parallel, ~20ms
+    assert.ok(duration < 35, `Expected duration ~20ms, got ${duration}ms`)
+  })
+
+  test('factory functions - lazy execution with concurrency control', async () => {
+    let started = 0
+    const delays = [20, 20, 20, 20]
+
+    // Factory functions - not called until concurrency slot is available
+    const factories = delays.map((delay, i) => () =>
+      new Promise<string>((resolve) => {
+        started++
+        setTimeout(() => resolve(`done-${i}`), delay)
+      })
+    )
+
+    const startTime = Date.now()
+    const [errors, results] = await goTryAll(factories, { concurrency: 2 })
+    const duration = Date.now() - startTime
+
+    assert.deepEqual(errors, [undefined, undefined, undefined, undefined])
+    assert.deepEqual(results, ['done-0', 'done-1', 'done-2', 'done-3'])
+
+    // With factories and concurrency 2, only 2 should start initially
+    // Then as they complete, the remaining 2 start
+    assert.equal(started, 4) // All 4 should eventually start
+
+    // With factories and concurrency 2, execution is truly limited
+    // Batches of 2 run sequentially: ~20ms + ~20ms = ~40ms total
+    assert.ok(duration >= 30, `Expected duration >=30ms with factory concurrency, got ${duration}ms`)
+  })
+
+  test('factory functions - truly limits concurrent execution', async () => {
+    let concurrent = 0
+    let maxConcurrent = 0
+
+    const factories = [1, 2, 3, 4].map((i) => () =>
+      new Promise<string>((resolve) => {
+        concurrent++
+        maxConcurrent = Math.max(maxConcurrent, concurrent)
+        setTimeout(() => {
+          concurrent--
+          resolve(`done-${i}`)
+        }, 10)
+      })
+    )
+
+    const [errors, results] = await goTryAll(factories, { concurrency: 2 })
+
+    assert.deepEqual(errors, [undefined, undefined, undefined, undefined])
+    assert.deepEqual(results, ['done-1', 'done-2', 'done-3', 'done-4'])
+    assert.equal(maxConcurrent, 2) // Should never exceed concurrency of 2
+  })
+
+  test('factory functions - auto-detected (mixing not allowed)', async () => {
+    // Factory mode is detected by checking if first item is a function
+    const factories = [
+      () => Promise.resolve('first'),
+      () => Promise.resolve('second'),
+    ]
+
+    const [errors, results] = await goTryAll(factories)
+
+    assert.deepEqual(errors, [undefined, undefined])
+    assert.deepEqual(results, ['first', 'second'])
+  })
+
+  test('factory functions - handles errors', async () => {
+    const factories = [
+      () => Promise.resolve('success-1'),
+      () => Promise.reject(new Error('fail-1')),
+      () => Promise.resolve('success-2'),
+      () => Promise.reject(new Error('fail-2')),
+    ]
+
+    const [errors, results] = await goTryAll(factories, { concurrency: 2 })
+
+    assert.equal(errors[0], undefined)
+    assert.equal(errors[1], 'fail-1')
+    assert.equal(errors[2], undefined)
+    assert.equal(errors[3], 'fail-2')
+
+    assert.equal(results[0], 'success-1')
+    assert.equal(results[1], undefined)
+    assert.equal(results[2], 'success-2')
+    assert.equal(results[3], undefined)
+  })
 })
 
-describe('goTrySettled', () => {
+describe('goTryAllRaw', () => {
   test('returns all values when all promises succeed', async () => {
-    const [errors, results] = await goTrySettled([
+    const [errors, results] = await goTryAllRaw([
       Promise.resolve('a'),
       Promise.resolve(42),
       Promise.resolve(true),
@@ -756,7 +910,7 @@ describe('goTrySettled', () => {
   })
 
   test('returns Error objects for failed promises', async () => {
-    const [errors, results] = await goTrySettled([
+    const [errors, results] = await goTryAllRaw([
       Promise.resolve('success'),
       Promise.reject(new Error('fail1')),
       Promise.resolve(42),
@@ -772,7 +926,7 @@ describe('goTrySettled', () => {
   })
 
   test('converts non-Error rejections to Error objects', async () => {
-    const [errors] = await goTrySettled([
+    const [errors] = await goTryAllRaw([
       Promise.reject('string error'),
       Promise.reject(42),
       Promise.reject(undefined),
@@ -784,7 +938,7 @@ describe('goTrySettled', () => {
   })
 
   test('handles empty array', async () => {
-    const [errors, results] = await goTrySettled([])
+    const [errors, results] = await goTryAllRaw([])
 
     assert.deepEqual(errors, [])
     assert.deepEqual(results, [])

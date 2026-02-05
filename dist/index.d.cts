@@ -3,6 +3,13 @@ type Failure<E> = readonly [E, undefined];
 type Result<E, T> = Success<T> | Failure<E>;
 type ResultWithDefault<E, T> = readonly [E | undefined, T];
 type MaybePromise<T> = T | Promise<T>;
+interface GoTryAllOptions {
+    /**
+     * Maximum number of concurrent promises.
+     * Set to 0 (default) for unlimited concurrency (all promises run in parallel).
+     */
+    concurrency?: number;
+}
 declare function isSuccess<E, T>(result: Result<E, T>): result is Success<T>;
 declare function isFailure<E, T>(result: Result<E, T>): result is Failure<E>;
 declare function success<T>(value: T): Success<T>;
@@ -34,42 +41,59 @@ declare function goTryOr<T>(promise: Promise<T>, defaultValue: T | (() => T)): P
 declare function goTryOr<T>(fn: () => T, defaultValue: T | (() => T)): ResultWithDefault<string, T>;
 declare function goTryOr<T>(value: T, defaultValue: T | (() => T)): ResultWithDefault<string, T>;
 /**
- * Executes multiple promises in parallel and returns a tuple of [errors, results].
- * Unlike Promise.all, this doesn't fail fast - it waits for all promises to settle.
+ * Executes multiple promises or factory functions in parallel (or with limited concurrency)
+ * and returns a tuple of [errors, results]. Unlike Promise.all, this doesn't fail fast -
+ * it waits for all promises to settle.
+ *
+ * Accepts either:
+ * - An array of promises (for simple parallel execution)
+ * - An array of factory functions that return promises (for lazy execution with concurrency control)
  *
  * @template T The tuple type of all promise results
- * @param {readonly [...{ [K in keyof T]: Promise<T[K]> }]} promises - Array of promises to execute
- * @returns {Promise<[(string | undefined)[], { [K in keyof T]: T[K] | undefined }]>}
- *          A tuple where the first element is an array of errors (or undefined) and
- *          the second element is an array of results (or undefined)
+ * @param {readonly [...{ [K in keyof T]: Promise<T[K]> | (() => Promise<T[K]>) }]} items - Array of promises or factories
+ * @param {GoTryAllOptions} options - Optional configuration
+ * @returns {Promise<[{ [K in keyof T]: string | undefined }, { [K in keyof T]: T[K] | undefined }]>}
+ *          A tuple where the first element is a tuple of errors (or undefined) and
+ *          the second element is a tuple of results (or undefined), preserving input order
  *
  * @example
+ * // Run all in parallel (default) - with promises
  * const [errors, results] = await goTryAll([
  *   fetchUser(1),
  *   fetchUser(2),
  *   fetchUser(3)
  * ])
  *
- * // errors: (string | undefined)[]
- * // results: (User | undefined)[]
+ * @example
+ * // Limit concurrency with factory functions (lazy execution)
+ * const [errors, results] = await goTryAll([
+ *   () => fetchUser(1),  // Only called when a slot is available
+ *   () => fetchUser(2),  // Only called when a slot is available
+ *   () => fetchUser(3),  // Only called when a slot is available
+ * ], { concurrency: 2 })
  */
-declare function goTryAll<T extends readonly unknown[]>(promises: {
-    [K in keyof T]: Promise<T[K]>;
-}): Promise<[(string | undefined)[], {
+declare function goTryAll<T extends readonly unknown[]>(items: {
+    [K in keyof T]: Promise<T[K]> | (() => Promise<T[K]>);
+}, options?: GoTryAllOptions): Promise<[{
+    [K in keyof T]: string | undefined;
+}, {
     [K in keyof T]: T[K] | undefined;
 }]>;
 /**
- * Similar to goTryAll, but returns the raw Error objects instead of just error messages.
+ * Like `goTryAll`, but returns raw Error objects instead of error messages.
  *
  * @template T The tuple type of all promise results
- * @param {readonly [...{ [K in keyof T]: Promise<T[K]> }]} promises - Array of promises to execute
- * @returns {Promise<[(Error | undefined)[], { [K in keyof T]: T[K] | undefined }]>}
- *          A tuple where the first element is an array of Error objects (or undefined) and
- *          the second element is an array of results (or undefined)
+ * @param {readonly [...{ [K in keyof T]: Promise<T[K]> | (() => Promise<T[K]>) }]} items - Array of promises or factories
+ * @param {GoTryAllOptions} options - Optional configuration
+ * @returns {Promise<[{ [K in keyof T]: Error | undefined }, { [K in keyof T]: T[K] | undefined }]>}
+ *          A tuple where the first element is a tuple of Error objects (or undefined) and
+ *          the second element is a tuple of results (or undefined), preserving input order
  */
-declare function goTrySettled<T extends readonly unknown[]>(promises: {
-    [K in keyof T]: Promise<T[K]>;
-}): Promise<[(Error | undefined)[], {
+declare function goTryAllRaw<T extends readonly unknown[]>(items: {
+    [K in keyof T]: Promise<T[K]> | (() => Promise<T[K]>);
+}, options?: GoTryAllOptions): Promise<[{
+    [K in keyof T]: Error | undefined;
+}, {
     [K in keyof T]: T[K] | undefined;
 }]>;
 /**
@@ -124,6 +148,6 @@ declare function goTryRaw<T, E = Error>(promise: Promise<T>): Promise<Result<E, 
 declare function goTryRaw<T, E = Error>(fn: () => T): Result<E, T>;
 declare function goTryRaw<T, E = Error>(value: T): Result<E, T>;
 
-export { failure, goTry, goTryAll, goTryOr, goTryRaw, goTrySettled, isFailure, isSuccess, success };
-export type { Failure, MaybePromise, Result, ResultWithDefault, Success };
+export { failure, goTry, goTryAll, goTryAllRaw, goTryOr, goTryRaw, isFailure, isSuccess, success };
+export type { Failure, GoTryAllOptions, MaybePromise, Result, ResultWithDefault, Success };
 //# sourceMappingURL=index.d.cts.map

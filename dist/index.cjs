@@ -26,34 +26,65 @@ function goTryOr(value, defaultValue) {
     return [getErrorMessage(err), resolveDefault(defaultValue)];
   }
 }
-async function goTryAll(promises) {
-  const settled = await Promise.allSettled(promises);
+async function runWithConcurrency(items, concurrency) {
+  if (items.length === 0) {
+    return [];
+  }
+  const isFactoryMode = typeof items[0] === "function";
+  if (!isFactoryMode && concurrency <= 0) {
+    return Promise.allSettled(items);
+  }
+  const results = new Array(items.length);
+  let index = 0;
+  async function worker() {
+    while (index < items.length) {
+      const currentIndex = index++;
+      try {
+        const item = items[currentIndex];
+        const value = isFactoryMode ? await item() : await item;
+        results[currentIndex] = { status: "fulfilled", value };
+      } catch (reason) {
+        results[currentIndex] = { status: "rejected", reason };
+      }
+    }
+  }
+  const workerCount = concurrency <= 0 ? items.length : Math.min(concurrency, items.length);
+  const workers = [];
+  for (let i = 0; i < workerCount; i++) {
+    workers.push(worker());
+  }
+  await Promise.all(workers);
+  return results;
+}
+async function goTryAll(items, options) {
+  const settled = await runWithConcurrency(items, options?.concurrency ?? 0);
   const errors = [];
   const results = [];
-  for (const item of settled) {
+  for (let i = 0; i < settled.length; i++) {
+    const item = settled[i];
     if (item.status === "fulfilled") {
-      errors.push(void 0);
-      results.push(item.value);
+      errors[i] = void 0;
+      results[i] = item.value;
     } else {
-      errors.push(getErrorMessage(item.reason));
-      results.push(void 0);
+      errors[i] = getErrorMessage(item.reason);
+      results[i] = void 0;
     }
   }
   return [errors, results];
 }
-async function goTrySettled(promises) {
-  const settled = await Promise.allSettled(promises);
+async function goTryAllRaw(items, options) {
+  const settled = await runWithConcurrency(items, options?.concurrency ?? 0);
   const errors = [];
   const results = [];
-  for (const item of settled) {
+  for (let i = 0; i < settled.length; i++) {
+    const item = settled[i];
     if (item.status === "fulfilled") {
-      errors.push(void 0);
-      results.push(item.value);
+      errors[i] = void 0;
+      results[i] = item.value;
     } else {
-      errors.push(
-        isError(item.reason) ? item.reason : new Error(String(item.reason))
-      );
-      results.push(void 0);
+      const reason = item.reason;
+      errors[i] = isError(reason) ? reason : new Error(String(reason));
+      results[i] = void 0;
     }
   }
   return [errors, results];
@@ -111,9 +142,9 @@ function goTryRaw(value) {
 exports.failure = failure;
 exports.goTry = goTry;
 exports.goTryAll = goTryAll;
+exports.goTryAllRaw = goTryAllRaw;
 exports.goTryOr = goTryOr;
 exports.goTryRaw = goTryRaw;
-exports.goTrySettled = goTrySettled;
 exports.isFailure = isFailure;
 exports.isSuccess = isSuccess;
 exports.success = success;
