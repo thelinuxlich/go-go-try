@@ -10,6 +10,52 @@ function success(value) {
 function failure(error) {
   return [error, void 0];
 }
+function resolveDefault(defaultValue) {
+  return typeof defaultValue === "function" ? defaultValue() : defaultValue;
+}
+function goTryOr(value, defaultValue) {
+  try {
+    const result = typeof value === "function" ? value() : value;
+    if (isPromise(result)) {
+      return result.then((resolvedValue) => success(resolvedValue)).catch((err) => [getErrorMessage(err), resolveDefault(defaultValue)]);
+    }
+    return success(result);
+  } catch (err) {
+    return [getErrorMessage(err), resolveDefault(defaultValue)];
+  }
+}
+async function goTryAll(promises) {
+  const settled = await Promise.allSettled(promises);
+  const errors = [];
+  const results = [];
+  for (const item of settled) {
+    if (item.status === "fulfilled") {
+      errors.push(void 0);
+      results.push(item.value);
+    } else {
+      errors.push(getErrorMessage(item.reason));
+      results.push(void 0);
+    }
+  }
+  return [errors, results];
+}
+async function goTrySettled(promises) {
+  const settled = await Promise.allSettled(promises);
+  const errors = [];
+  const results = [];
+  for (const item of settled) {
+    if (item.status === "fulfilled") {
+      errors.push(void 0);
+      results.push(item.value);
+    } else {
+      errors.push(
+        isError(item.reason) ? item.reason : new Error(String(item.reason))
+      );
+      results.push(void 0);
+    }
+  }
+  return [errors, results];
+}
 function getErrorMessage(error) {
   if (error === void 0) return "undefined";
   if (typeof error === "string") return error;
@@ -60,4 +106,4 @@ function goTryRaw(value) {
   }
 }
 
-export { failure, goTry, goTryRaw, isFailure, isSuccess, success };
+export { failure, goTry, goTryAll, goTryOr, goTryRaw, goTrySettled, isFailure, isSuccess, success };

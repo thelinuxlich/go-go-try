@@ -1,55 +1,63 @@
 {
-  "name": "go-go-try",
-  "version": "6.2.0",
-  "description": "Tries to execute a sync/async function, returns a result tuple",
-  "license": "MIT",
-  "repository": "thelinuxlich/go-go-try",
-  "author": {
-    "name": "Alisson Cavalcante Agiani",
-    "email": "thelinuxlich@gmail.com"
-  },
-  "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.mts",
-  "exports": {
-    "require": {
-      "types": "./dist/index.d.cts",
-      "default": "./dist/index.cjs"
-    },
-    "import": {
-      "types": "./dist/index.d.mts",
-      "default": "./dist/index.mjs"
-    }
-  },
-  "engines": {
-    "node": ">=16"
-  },
-  "scripts": {
-    "build": "pkgroll",
-    "lint": "biome lint --write src/*.ts",
-    "test": "npm run build && npm run lint && vitest run"
-  },
-  "keywords": [
-    "errors",
-    "try",
-    "catch",
-    "error handling",
-    "nice-try",
-    "good-try",
-    "neverthrow",
-    "ts-result",
-    "effect",
-    "go-go-try",
-    "gotry",
-    "go-try"
-  ],
-  "devDependencies": {
-    "@ark/attest": "^0.46.0",
-    "@biomejs/biome": "^1.9.4",
-    "pkgroll": "^2.12.1",
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.3",
-    "vitest": "^3.1.2"
-  }
+	"name": "go-go-try",
+	"version": "7.0.0",
+	"description": "Tries to execute a sync/async function, returns a result tuple",
+	"license": "MIT",
+	"repository": "thelinuxlich/go-go-try",
+	"author": {
+		"name": "Alisson Cavalcante Agiani",
+		"email": "thelinuxlich@gmail.com"
+	},
+	"type": "module",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.mts",
+	"exports": {
+		"require": {
+			"types": "./dist/index.d.cts",
+			"default": "./dist/index.cjs"
+		},
+		"import": {
+			"types": "./dist/index.d.mts",
+			"default": "./dist/index.mjs"
+		}
+	},
+	"engines": {
+		"node": ">=16"
+	},
+	"scripts": {
+		"build": "pkgroll",
+		"lint": "biome lint --write src/*.ts",
+		"test": "npm run build && npm run lint && vitest run",
+		"test:coverage": "vitest run --coverage",
+		"prepare": "husky"
+	},
+	"keywords": [
+		"errors",
+		"try",
+		"catch",
+		"error handling",
+		"nice-try",
+		"good-try",
+		"neverthrow",
+		"ts-result",
+		"effect",
+		"go-go-try",
+		"gotry",
+		"go-try"
+	],
+	"devDependencies": {
+		"@ark/attest": "^0.56.0",
+		"@biomejs/biome": "^2.3.14",
+		"@vitest/coverage-v8": "^4.0.18",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.2.7",
+		"pkgroll": "^2.23.0",
+		"tsx": "^4.21.0",
+		"typescript": "^5.9.3",
+		"vitest": "^4.0.18"
+	},
+	"lint-staged": {
+		"*.ts": ["biome lint --write"]
+	}
 }

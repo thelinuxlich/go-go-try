@@ -5,3 +5,11 @@
 yarn.lock
 yarn-error.log
 .eslintcache
+
+# Coverage
+coverage/
+*.lcov
+
+# Husky
+.husky/_
+AGENTS.md
