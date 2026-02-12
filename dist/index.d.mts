@@ -173,19 +173,6 @@ type ErrorConstructor<E> = new (message: string, options?: {
     cause?: unknown;
 }) => E;
 /**
- * Extracts the instance type from a tagged error class.
- * Useful for creating cleaner error type definitions.
- *
- * @template T The tagged error class type
- * @returns The instance type of the error class
- *
- * @example
- * const DatabaseError = taggedError('DatabaseError')
- * type DbError = TaggedInstance<typeof DatabaseError>
- * // Equivalent to: InstanceType<typeof DatabaseError>
- */
-type TaggedInstance<T extends ErrorConstructor<unknown>> = T extends ErrorConstructor<infer E> ? E : never;
-/**
  * Creates a union type from multiple tagged error classes.
  *
  * @template T A tuple of tagged error class types
@@ -241,5 +228,5 @@ declare function goTryRaw<T, E = Error>(value: T): Result<E, T>;
 declare function goTryRaw<T, E = Error>(value: T, ErrorClass: ErrorConstructor<E>): Result<E, T>;
 
 export { failure, goTry, goTryAll, goTryAllRaw, goTryOr, goTryRaw, isFailure, isSuccess, success, taggedError };
-export type { ErrorConstructor, Failure, GoTryAllOptions, MaybePromise, Result, ResultWithDefault, Success, TaggedError, TaggedInstance, TaggedUnion };
+export type { ErrorConstructor, Failure, GoTryAllOptions, MaybePromise, Result, ResultWithDefault, Success, TaggedError, TaggedUnion };
 //# sourceMappingURL=index.d.mts.map

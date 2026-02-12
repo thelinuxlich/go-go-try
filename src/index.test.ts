@@ -8,7 +8,6 @@ function assertNever(value: never): never {
 }
 import {
   type Result,
-  type TaggedInstance,
   type TaggedUnion,
   failure,
   goTry,
@@ -1148,18 +1147,6 @@ describe('taggedError type tests', () => {
   })
 })
 
-
-describe('TaggedInstance type helper', () => {
-  test('extracts instance type from tagged error class', () => {
-    const DatabaseError = taggedError('DatabaseError')
-    type DbError = TaggedInstance<typeof DatabaseError>
-
-    // DbError should be the instance type
-    const err: DbError = new DatabaseError('fail')
-    assert.equal(err._tag, 'DatabaseError')
-    assert.equal(err.message, 'fail')
-  })
-})
 
 describe('TaggedUnion type helper', () => {
   test('creates union type from multiple error classes', () => {

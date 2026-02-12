@@ -453,22 +453,6 @@ console.log(err.name)    // 'DatabaseError'
 console.log(err.cause)   // originalError
 ```
 
-### `TaggedInstance<T>`
-
-Extracts the instance type from a tagged error class. Cleaner alternative to `InstanceType<typeof ErrorClass>`.
-
-```ts
-type TaggedInstance<T extends ErrorConstructor<unknown>> = 
-  T extends ErrorConstructor<infer E> ? E : never
-```
-
-**Example:**
-```ts
-const DatabaseError = taggedError('DatabaseError')
-type DbError = TaggedInstance<typeof DatabaseError>
-// Equivalent to: InstanceType<typeof DatabaseError>
-```
-
 ### `TaggedUnion<T>`
 
 Creates a union type from multiple tagged error classes.
