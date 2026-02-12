@@ -1,7 +1,16 @@
 import { attest } from '@ark/attest'
 import { assert, describe, test } from 'vitest'
+
+// Helper for exhaustive switch checks - if this function is called,
+// it means we forgot to handle a case in a switch statement
+function assertNever(value: never): never {
+  throw new Error(`Unhandled case: ${String(value)}`)
+}
 import {
   type Result,
+  type TaggedInstance,
+  type TaggedUnion,
+  failure,
   goTry,
   goTryAll,
   goTryAllRaw,
@@ -9,6 +18,8 @@ import {
   goTryRaw,
   isFailure,
   isSuccess,
+  success,
+  taggedError,
 } from './index.js'
 
 test(`value returned by callback is used when callback doesn't throw`, async () => {
@@ -942,5 +953,413 @@ describe('goTryAllRaw', () => {
 
     assert.deepEqual(errors, [])
     assert.deepEqual(results, [])
+  })
+})
+
+
+describe('taggedError', () => {
+  test('creates error class with _tag property', () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const err = new DatabaseError('connection failed')
+
+    assert.equal(err._tag, 'DatabaseError')
+    assert.equal(err.message, 'connection failed')
+    assert.equal(err.name, 'DatabaseError')
+    assert.ok(err instanceof Error)
+    assert.ok(err instanceof DatabaseError)
+  })
+
+  test('supports cause option', () => {
+    const NetworkError = taggedError('NetworkError')
+    const cause = new Error('ECONNREFUSED')
+    const err = new NetworkError('request failed', { cause })
+
+    assert.equal(err._tag, 'NetworkError')
+    assert.equal(err.message, 'request failed')
+    assert.equal(err.cause, cause)
+  })
+
+  test('different error types have distinct _tag values', () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const NetworkError = taggedError('NetworkError')
+    const ValidationError = taggedError('ValidationError')
+
+    const dbErr = new DatabaseError('db fail')
+    const netErr = new NetworkError('net fail')
+    const valErr = new ValidationError('val fail')
+
+    assert.equal(dbErr._tag, 'DatabaseError')
+    assert.equal(netErr._tag, 'NetworkError')
+    assert.equal(valErr._tag, 'ValidationError')
+  })
+
+  test('works with goTryRaw for discriminated error handling', async () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const NetworkError = taggedError('NetworkError')
+
+    // Simulate a database operation that might fail
+    const fetchFromDb = () => {
+      throw new DatabaseError('query failed')
+    }
+
+    // Simulate a network request that might fail
+    const fetchFromNetwork = () => {
+      throw new NetworkError('timeout')
+    }
+
+    // Wrap in functions so goTryRaw can catch the errors
+    const [dbErr, dbResult] = goTryRaw(fetchFromDb, DatabaseError)
+    const [netErr, netResult] = goTryRaw(fetchFromNetwork, NetworkError)
+
+    // Type narrowing via discriminated union
+    if (dbErr) {
+      assert.equal(dbErr._tag, 'DatabaseError')
+      assert.equal(dbErr.message, 'query failed')
+    }
+
+    if (netErr) {
+      assert.equal(netErr._tag, 'NetworkError')
+      assert.equal(netErr.message, 'timeout')
+    }
+
+    assert.equal(dbResult, undefined)
+    assert.equal(netResult, undefined)
+  })
+
+  test('can return union of error types from function', async () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const NetworkError = taggedError('NetworkError')
+
+    type AppError = InstanceType<typeof DatabaseError> | InstanceType<typeof NetworkError>
+
+    async function fetchUser(id: string): Promise<Result<AppError, { id: string; name: string }>> {
+      const [dbErr, user] = await goTryRaw(
+        Promise.resolve({ id, name: 'John' }),
+        DatabaseError,
+      )
+      if (dbErr) return failure<AppError>(dbErr)
+      return [undefined, user] as const
+    }
+
+    async function fetchData(): Promise<Result<AppError, string>> {
+      const [netErr, data] = await goTryRaw(Promise.resolve('data'), NetworkError)
+      if (netErr) return failure<AppError>(netErr)
+      return [undefined, data] as const
+    }
+
+    // Use the functions
+    const [userErr, user] = await fetchUser('123')
+    const [, data] = await fetchData()
+
+    // Type narrowing works with discriminated unions
+    if (userErr) {
+      // userErr._tag can be 'DatabaseError' | 'NetworkError'
+      assert.ok(userErr._tag === 'DatabaseError' || userErr._tag === 'NetworkError')
+    }
+
+    assert.deepEqual(user, { id: '123', name: 'John' })
+    assert.equal(data, 'data')
+  })
+
+  test('pattern matching on error types', async () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const NetworkError = taggedError('NetworkError')
+    const ValidationError = taggedError('ValidationError')
+
+    type AppError =
+      | InstanceType<typeof DatabaseError>
+      | InstanceType<typeof NetworkError>
+      | InstanceType<typeof ValidationError>
+
+    function handleError(err: AppError): string {
+      switch (err._tag) {
+        case 'DatabaseError':
+          return `DB: ${err.message}`
+        case 'NetworkError':
+          return `NET: ${err.message}`
+        case 'ValidationError':
+          return `VAL: ${err.message}`
+        default:
+          return `UNK: ${err.message}`
+      }
+    }
+
+    assert.equal(handleError(new DatabaseError('fail')), 'DB: fail')
+    assert.equal(handleError(new NetworkError('timeout')), 'NET: timeout')
+    assert.equal(handleError(new ValidationError('invalid')), 'VAL: invalid')
+  })
+
+  test('exhaustive switch with never type', () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const NetworkError = taggedError('NetworkError')
+    const ValidationError = taggedError('ValidationError')
+
+    type AppError = TaggedUnion<[typeof DatabaseError, typeof NetworkError, typeof ValidationError]>
+
+    // Exhaustive switch - TypeScript will error if any case is missing
+    function handleErrorExhaustive(err: AppError): string {
+      switch (err._tag) {
+        case 'DatabaseError':
+          return `DB: ${err.message}`
+        case 'NetworkError':
+          return `NET: ${err.message}`
+        case 'ValidationError':
+          return `VAL: ${err.message}`
+        default:
+          // This ensures all cases are handled - if we forget a case above,
+          // err will not be never and TypeScript will error
+          return assertNever(err)
+      }
+    }
+
+    assert.equal(handleErrorExhaustive(new DatabaseError('fail')), 'DB: fail')
+    assert.equal(handleErrorExhaustive(new NetworkError('timeout')), 'NET: timeout')
+    assert.equal(handleErrorExhaustive(new ValidationError('invalid')), 'VAL: invalid')
+  })
+})
+
+describe('taggedError type tests', () => {
+  test('error class has correct type structure', () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const err = new DatabaseError('fail')
+
+    // The error should have _tag, message, and cause properties
+    attest<'DatabaseError'>(err._tag)
+    attest<string>(err.message)
+    attest<unknown | undefined>(err.cause)
+    // Error instance check - the class extends Error
+    assert.ok(err instanceof Error)
+  })
+
+  test('discriminated union type narrowing works', () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const NetworkError = taggedError('NetworkError')
+
+    type AppError = InstanceType<typeof DatabaseError> | InstanceType<typeof NetworkError>
+
+    const err: AppError = new DatabaseError('fail')
+
+    // Type narrowing via _tag
+    if (err._tag === 'DatabaseError') {
+      attest<InstanceType<typeof DatabaseError>>(err)
+    } else {
+      attest<InstanceType<typeof NetworkError>>(err)
+    }
+  })
+})
+
+
+describe('TaggedInstance type helper', () => {
+  test('extracts instance type from tagged error class', () => {
+    const DatabaseError = taggedError('DatabaseError')
+    type DbError = TaggedInstance<typeof DatabaseError>
+
+    // DbError should be the instance type
+    const err: DbError = new DatabaseError('fail')
+    assert.equal(err._tag, 'DatabaseError')
+    assert.equal(err.message, 'fail')
+  })
+})
+
+describe('TaggedUnion type helper', () => {
+  test('creates union type from multiple error classes', () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const NetworkError = taggedError('NetworkError')
+    const ValidationError = taggedError('ValidationError')
+
+    // Create union type using helper
+    type AppError = TaggedUnion<[typeof DatabaseError, typeof NetworkError, typeof ValidationError]>
+
+    // All error types should be assignable to AppError
+    const dbErr: AppError = new DatabaseError('db fail')
+    const netErr: AppError = new NetworkError('net fail')
+    const valErr: AppError = new ValidationError('val fail')
+
+    assert.equal(dbErr._tag, 'DatabaseError')
+    assert.equal(netErr._tag, 'NetworkError')
+    assert.equal(valErr._tag, 'ValidationError')
+
+    // Pattern matching should work
+    function handleError(err: AppError): string {
+      switch (err._tag) {
+        case 'DatabaseError':
+          return `DB: ${err.message}`
+        case 'NetworkError':
+          return `NET: ${err.message}`
+        case 'ValidationError':
+          return `VAL: ${err.message}`
+        default:
+          return `UNK: ${err.message}`
+      }
+    }
+
+    assert.equal(handleError(dbErr), 'DB: db fail')
+    assert.equal(handleError(netErr), 'NET: net fail')
+    assert.equal(handleError(valErr), 'VAL: val fail')
+  })
+
+  test('works with goTryRaw for typed error handling', async () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const NetworkError = taggedError('NetworkError')
+
+    type AppError = TaggedUnion<[typeof DatabaseError, typeof NetworkError]>
+
+    async function fetchData(): Promise<Result<AppError, string>> {
+      const [err, data] = await goTryRaw(
+        Promise.reject(new Error('timeout')),
+        NetworkError,
+      )
+      if (err) return failure<AppError>(err)
+      return [undefined, data] as const
+    }
+
+    const [err, data] = await fetchData()
+    assert.equal(data, undefined)
+    assert.equal(err?._tag, 'NetworkError')
+    assert.equal(err?.message, 'timeout')
+  })
+})
+
+
+describe('inferred return types with tagged errors', () => {
+  test('function infers union return type without explicit annotation', async () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const NetworkError = taggedError('NetworkError')
+
+    // No explicit return type - TypeScript should infer it
+    async function fetchUserData(id: string) {
+      // First operation might fail with DatabaseError
+      const [dbErr, user] = await goTryRaw(
+        Promise.resolve({ id, name: 'John' }),
+        DatabaseError,
+      )
+      if (dbErr) return failure(dbErr)
+
+      // Second operation might fail with NetworkError
+      const [netErr, enriched] = await goTryRaw(
+        Promise.resolve({ ...user!, email: 'john@example.com' }),
+        NetworkError,
+      )
+      if (netErr) return failure(netErr)
+
+      return [undefined, enriched] as const
+    }
+
+    // The return type should be inferred as:
+    // Promise<Result<DatabaseError | NetworkError, { id: string; name: string; email: string }>>
+
+    const [err, user] = await fetchUserData('123')
+
+    // Type narrowing should work
+    if (err) {
+      // err should be DatabaseError | NetworkError
+      switch (err._tag) {
+        case 'DatabaseError':
+          assert.equal(err._tag, 'DatabaseError')
+          break
+        case 'NetworkError':
+          assert.equal(err._tag, 'NetworkError')
+          break
+        default:
+          assertNever(err)
+      }
+    } else {
+      // user should be fully typed
+      assert.deepEqual(user, { id: '123', name: 'John', email: 'john@example.com' })
+    }
+  })
+
+  test('sync function infers union return type', () => {
+    const ParseError = taggedError('ParseError')
+    const ValidateError = taggedError('ValidateError')
+
+    // No explicit return type annotation
+    function processConfig(input: string) {
+      // Parse step
+      const [parseErr, parsed] = goTryRaw(() => JSON.parse(input), ParseError)
+      if (parseErr) return failure(parseErr)
+
+      // Validate step
+      const [validateErr, validated] = goTryRaw(() => {
+        if (!parsed!.port) throw new Error('Missing port')
+        return parsed as { port: number }
+      }, ValidateError)
+      if (validateErr) return failure(validateErr)
+
+      return [undefined, validated] as const
+    }
+
+    // Success case
+    const [err1, config1] = processConfig('{"port": 3000}')
+    assert.equal(err1, undefined)
+    assert.deepEqual(config1, { port: 3000 })
+
+    // Parse error case
+    const [err2, config2] = processConfig('invalid json')
+    assert.equal(err2?._tag, 'ParseError')
+    assert.equal(config2, undefined)
+
+    // Validation error case
+    const [err3, config3] = processConfig('{"host": "localhost"}')
+    assert.equal(err3?._tag, 'ValidateError')
+    assert.equal(config3, undefined)
+  })
+
+  test('multiple error sources collapse to union type', async () => {
+    const ErrorA = taggedError('ErrorA')
+    const ErrorB = taggedError('ErrorB')
+    const ErrorC = taggedError('ErrorC')
+
+    // Function with multiple potential error sources
+    async function complexOperation(shouldFail: 'a' | 'b' | 'c' | 'none') {
+      const [errA, valA] = await goTryRaw(
+        shouldFail === 'a' ? Promise.reject(new Error('a')) : Promise.resolve('step1'),
+        ErrorA,
+      )
+      if (errA) return failure(errA)
+
+      const [errB, valB] = await goTryRaw(
+        shouldFail === 'b' ? Promise.reject(new Error('b')) : Promise.resolve('step2'),
+        ErrorB,
+      )
+      if (errB) return failure(errB)
+
+      const [errC, valC] = await goTryRaw(
+        shouldFail === 'c' ? Promise.reject(new Error('c')) : Promise.resolve('step3'),
+        ErrorC,
+      )
+      if (errC) return failure(errC)
+
+      return success({ valA, valB, valC })
+    }
+
+    // All cases should be handled with exhaustive switch
+    async function handleOperation(shouldFail: 'a' | 'b' | 'c' | 'none') {
+      const [err, result] = await complexOperation(shouldFail)
+
+      if (err) {
+        // TypeScript should infer err as ErrorA | ErrorB | ErrorC
+        switch (err._tag) {
+          case 'ErrorA':
+            return `Failed at step A: ${err.message}`
+          case 'ErrorB':
+            return `Failed at step B: ${err.message}`
+          case 'ErrorC':
+            return `Failed at step C: ${err.message}`
+          default:
+            return assertNever(err)
+        }
+      }
+
+      return `Success: ${JSON.stringify(result)}`
+    }
+
+    assert.equal(await handleOperation('a'), 'Failed at step A: a')
+    assert.equal(await handleOperation('b'), 'Failed at step B: b')
+    assert.equal(await handleOperation('c'), 'Failed at step C: c')
+    assert.equal(
+      await handleOperation('none'),
+      'Success: {"valA":"step1","valB":"step2","valC":"step3"}',
+    )
   })
 })

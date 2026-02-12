@@ -1,6 +1,51 @@
 type Success<T> = readonly [undefined, T];
 type Failure<E> = readonly [E, undefined];
 type Result<E, T> = Success<T> | Failure<E>;
+/**
+ * Base interface for tagged errors.
+ * The `_tag` property enables discriminated union narrowing.
+ */
+interface TaggedError<T extends string> {
+    readonly _tag: T;
+    readonly message: string;
+    readonly cause?: unknown;
+}
+/**
+ * Creates a tagged error class for discriminated error handling.
+ *
+ * @template T The literal type of the tag
+ * @param tag The string tag to identify this error type (e.g., 'DatabaseError')
+ * @returns A class constructor for creating tagged errors
+ *
+ * @example
+ * const DatabaseError = taggedError('DatabaseError')
+ * const NetworkError = taggedError('NetworkError')
+ *
+ * type MyError = InstanceType<typeof DatabaseError> | InstanceType<typeof NetworkError>
+ *
+ * function fetchUser(id: string): Result<MyError, User> {
+ *   const [err, user] = goTryRaw(fetch(`/users/${id}`), DatabaseError)
+ *   if (err) return failure(err)
+ *   // ...
+ * }
+ *
+ * // Pattern matching on errors
+ * if (err._tag === 'DatabaseError') {
+ *   // TypeScript knows this is DatabaseError
+ * }
+ */
+declare function taggedError<T extends string>(tag: T): {
+    new (message: string, options?: {
+        cause?: unknown;
+    }): {
+        readonly _tag: T;
+        readonly cause?: unknown;
+        name: string;
+        message: string;
+        stack?: string;
+    };
+    isError(error: unknown): error is Error;
+};
 type ResultWithDefault<E, T> = readonly [E | undefined, T];
 type MaybePromise<T> = T | Promise<T>;
 interface GoTryAllOptions {
@@ -122,12 +167,48 @@ declare function goTry<T>(promise: Promise<T>): Promise<Result<string, T>>;
 declare function goTry<T>(fn: () => T): Result<string, T>;
 declare function goTry<T>(value: T): Result<string, T>;
 /**
+ * Type for error constructors that can be used with goTryRaw.
+ */
+type ErrorConstructor<E> = new (message: string, options?: {
+    cause?: unknown;
+}) => E;
+/**
+ * Extracts the instance type from a tagged error class.
+ * Useful for creating cleaner error type definitions.
+ *
+ * @template T The tagged error class type
+ * @returns The instance type of the error class
+ *
+ * @example
+ * const DatabaseError = taggedError('DatabaseError')
+ * type DbError = TaggedInstance<typeof DatabaseError>
+ * // Equivalent to: InstanceType<typeof DatabaseError>
+ */
+type TaggedInstance<T extends ErrorConstructor<unknown>> = T extends ErrorConstructor<infer E> ? E : never;
+/**
+ * Creates a union type from multiple tagged error classes.
+ *
+ * @template T A tuple of tagged error class types
+ * @returns A union of all instance types
+ *
+ * @example
+ * const DatabaseError = taggedError('DatabaseError')
+ * const NetworkError = taggedError('NetworkError')
+ *
+ * type AppError = TaggedUnion<[typeof DatabaseError, typeof NetworkError]>
+ * // Equivalent to: DatabaseError | NetworkError
+ */
+type TaggedUnion<T extends readonly ErrorConstructor<unknown>[]> = {
+    [K in keyof T]: T[K] extends ErrorConstructor<infer E> ? E : never;
+}[number];
+/**
  * Executes a function, promise, or value and returns a Result type.
  * If an error occurs, it returns a Failure with the raw error object.
  *
  * @template T The type of the successful result
  * @template E The type of the error, defaults to Error
  * @param {T | Promise<T> | (() => T | Promise<T>)} value - The value, promise, or function to execute
+ * @param {ErrorConstructor<E>} [ErrorClass] - Optional error constructor to wrap caught errors
  * @returns {Result<E, T> | Promise<Result<E, T>>} A Result type or a Promise of a Result type
  *
  * @example
@@ -141,13 +222,24 @@ declare function goTry<T>(value: T): Result<string, T>;
  * @example
  * // With a promise
  * const [err, result] = await goTryRaw(fetch('https://api.example.com/data'));
+ *
+ * @example
+ * // With tagged error for discriminated unions
+ * const DatabaseError = taggedError('DatabaseError');
+ * const [err, result] = await goTryRaw(fetchData(), DatabaseError);
+ * // err is InstanceType<typeof DatabaseError> | undefined
  */
 declare function goTryRaw<T, E = Error>(fn: () => never): Result<E, never>;
+declare function goTryRaw<T, E = Error>(fn: () => never, ErrorClass: ErrorConstructor<E>): Result<E, never>;
 declare function goTryRaw<T, E = Error>(fn: () => Promise<T>): Promise<Result<E, T>>;
+declare function goTryRaw<T, E = Error>(fn: () => Promise<T>, ErrorClass: ErrorConstructor<E>): Promise<Result<E, T>>;
 declare function goTryRaw<T, E = Error>(promise: Promise<T>): Promise<Result<E, T>>;
+declare function goTryRaw<T, E = Error>(promise: Promise<T>, ErrorClass: ErrorConstructor<E>): Promise<Result<E, T>>;
 declare function goTryRaw<T, E = Error>(fn: () => T): Result<E, T>;
+declare function goTryRaw<T, E = Error>(fn: () => T, ErrorClass: ErrorConstructor<E>): Result<E, T>;
 declare function goTryRaw<T, E = Error>(value: T): Result<E, T>;
+declare function goTryRaw<T, E = Error>(value: T, ErrorClass: ErrorConstructor<E>): Result<E, T>;
 
-export { failure, goTry, goTryAll, goTryAllRaw, goTryOr, goTryRaw, isFailure, isSuccess, success };
-export type { Failure, GoTryAllOptions, MaybePromise, Result, ResultWithDefault, Success };
+export { failure, goTry, goTryAll, goTryAllRaw, goTryOr, goTryRaw, isFailure, isSuccess, success, taggedError };
+export type { ErrorConstructor, Failure, GoTryAllOptions, MaybePromise, Result, ResultWithDefault, Success, TaggedError, TaggedInstance, TaggedUnion };
 //# sourceMappingURL=index.d.cts.map

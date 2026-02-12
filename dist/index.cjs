@@ -1,5 +1,15 @@
 'use strict';
 
+function taggedError(tag) {
+  return class TaggedErrorClass extends Error {
+    constructor(message, options) {
+      super(message);
+      this._tag = tag;
+      this.name = tag;
+      this.cause = options?.cause;
+    }
+  };
+}
 function isSuccess(result) {
   return result[0] === void 0;
 }
@@ -118,24 +128,30 @@ function goTry(value) {
     return failure(getErrorMessage(err));
   }
 }
-function goTryRaw(value) {
+function goTryRaw(value, ErrorClass) {
+  const wrapError = (err) => {
+    if (ErrorClass) {
+      if (err === void 0) {
+        return new ErrorClass("undefined");
+      }
+      if (isError(err)) {
+        return new ErrorClass(err.message, { cause: err });
+      }
+      return new ErrorClass(String(err));
+    }
+    if (err === void 0) {
+      return new Error("undefined");
+    }
+    return isError(err) ? err : new Error(String(err));
+  };
   try {
     const result = typeof value === "function" ? value() : value;
     if (isPromise(result)) {
-      return result.then((resolvedValue) => success(resolvedValue)).catch((err) => {
-        if (err === void 0) {
-          return failure(new Error("undefined"));
-        }
-        return failure(
-          isError(err) ? err : new Error(String(err))
-        );
-      });
+      return result.then((resolvedValue) => success(resolvedValue)).catch((err) => failure(wrapError(err)));
     }
     return success(result);
   } catch (err) {
-    return failure(
-      isError(err) ? err : new Error(String(err))
-    );
+    return failure(wrapError(err));
   }
 }
 
@@ -148,3 +164,4 @@ exports.goTryRaw = goTryRaw;
 exports.isFailure = isFailure;
 exports.isSuccess = isSuccess;
 exports.success = success;
+exports.taggedError = taggedError;

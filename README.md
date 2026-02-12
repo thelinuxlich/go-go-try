@@ -202,6 +202,88 @@ if (err === undefined) {
 }
 ```
 
+### Tagged Errors for Discriminated Unions
+
+Create typed errors with a `_tag` property for pattern matching and discriminated unions:
+
+```ts
+import { taggedError, goTryRaw, failure, type Result } from 'go-go-try'
+
+// Define error types
+const DatabaseError = taggedError('DatabaseError')
+const NetworkError = taggedError('NetworkError')
+const ValidationError = taggedError('ValidationError')
+
+// Create a union type
+import type { TaggedUnion } from 'go-go-try'
+
+// Option 1: Using TaggedUnion helper (cleaner)
+const DatabaseError = taggedError('DatabaseError')
+const NetworkError = taggedError('NetworkError')
+const ValidationError = taggedError('ValidationError')
+
+type AppError = TaggedUnion<[typeof DatabaseError, typeof NetworkError, typeof ValidationError]>
+// Equivalent to: DatabaseError | NetworkError | ValidationError
+
+// Option 2: Using InstanceType (standard TypeScript)
+type AppErrorVerbose = 
+  | InstanceType<typeof DatabaseError>
+  | InstanceType<typeof NetworkError>
+  | InstanceType<typeof ValidationError>
+
+// Use in functions with typed error returns
+async function fetchUser(id: string): Promise<Result<AppError, User>> {
+  const [dbErr, user] = await goTryRaw(queryDatabase(id), DatabaseError)
+  if (dbErr) return failure(dbErr)
+  
+  const [netErr, enriched] = await goTryRaw(enrichUserData(user!), NetworkError)
+  if (netErr) return failure(netErr)
+  
+  return [undefined, enriched] as const
+}
+
+// Pattern matching on errors
+const [err, user] = await fetchUser('123')
+if (err) {
+  switch (err._tag) {
+    case 'DatabaseError':
+      console.error('Database failed:', err.message)
+      break
+    case 'NetworkError':
+      console.error('Network issue:', err.message)
+      break
+    case 'ValidationError':
+      console.error('Invalid data:', err.message)
+      break
+  }
+}
+
+// Exhaustive switch with compile-time safety
+function assertNever(value: never): never {
+  throw new Error(`Unhandled case: ${String(value)}`)
+}
+
+function handleError(err: AppError): string {
+  switch (err._tag) {
+    case 'DatabaseError':
+      return `DB: ${err.message}`
+    case 'NetworkError':
+      return `NET: ${err.message}`
+    case 'ValidationError':
+      return `VAL: ${err.message}`
+    default:
+      // TypeScript will error here if any case is missing above
+      return assertNever(err)
+  }
+}
+```
+
+The `taggedError` function creates an error class with:
+- `_tag`: A readonly string literal for discriminated unions
+- `message`: The error message
+- `cause`: Optional cause for error chaining
+- `name`: Set to the tag value
+
 ### Helper Functions
 
 Build custom utilities on top of the primitives:
@@ -236,12 +318,32 @@ Executes a function, promise, or value and returns a Result type with error mess
 function goTry<T>(value: T | Promise<T> | (() => T | Promise<T>)): Result<string, T> | Promise<Result<string, T>>
 ```
 
-### `goTryRaw<T, E>(value)`
+### `goTryRaw<T, E>(value, ErrorClass?)`
 
 Like `goTry` but returns the raw Error object instead of just the message.
 
+Optionally accepts an error constructor to wrap caught errors - useful with `taggedError` for discriminated unions.
+
 ```ts
+// Without ErrorClass - err is Error | undefined
 function goTryRaw<T, E = Error>(value: T | Promise<T> | (() => T | Promise<T>)): Result<E, T> | Promise<Result<E, T>>
+
+// With ErrorClass - err is E | undefined (e.g., DatabaseError | undefined)
+function goTryRaw<T, E>(value: T | Promise<T> | (() => T | Promise<T>), ErrorClass: ErrorConstructor<E>): Result<E, T> | Promise<Result<E, T>>
+```
+
+**Example:**
+```ts
+const DatabaseError = taggedError('DatabaseError')
+
+// Raw error (default)
+const [err1, data1] = await goTryRaw(fetchData())
+// err1 is Error | undefined
+
+// Tagged error
+const [err2, data2] = await goTryRaw(fetchData(), DatabaseError)
+// err2 is DatabaseError | undefined
+// err2._tag is 'DatabaseError' - enables discriminated unions
 ```
 
 ### `goTryAll<T>(items, options?)`
@@ -325,12 +427,120 @@ function success<T>(value: T): Success<T>
 function failure<E>(error: E): Failure<E>
 ```
 
+### `taggedError<T>(tag)`
+
+Creates a tagged error class for discriminated error handling. Returns a class constructor that extends `Error` and includes a readonly `_tag` property.
+
+```ts
+function taggedError<T extends string>(tag: T): TaggedErrorClass<T>
+
+// Returned class interface:
+class TaggedErrorClass<T> extends Error implements TaggedError<T> {
+  readonly _tag: T
+  readonly cause?: unknown
+  constructor(message: string, options?: { cause?: unknown })
+}
+```
+
+**Example:**
+```ts
+const DatabaseError = taggedError('DatabaseError')
+const err = new DatabaseError('connection failed', { cause: originalError })
+
+console.log(err._tag)    // 'DatabaseError'
+console.log(err.message) // 'connection failed'
+console.log(err.name)    // 'DatabaseError'
+console.log(err.cause)   // originalError
+```
+
+### `TaggedInstance<T>`
+
+Extracts the instance type from a tagged error class. Cleaner alternative to `InstanceType<typeof ErrorClass>`.
+
+```ts
+type TaggedInstance<T extends ErrorConstructor<unknown>> = 
+  T extends ErrorConstructor<infer E> ? E : never
+```
+
+**Example:**
+```ts
+const DatabaseError = taggedError('DatabaseError')
+type DbError = TaggedInstance<typeof DatabaseError>
+// Equivalent to: InstanceType<typeof DatabaseError>
+```
+
+### `TaggedUnion<T>`
+
+Creates a union type from multiple tagged error classes.
+
+```ts
+type TaggedUnion<T extends readonly ErrorConstructor<unknown>[]> = 
+  { [K in keyof T]: T[K] extends ErrorConstructor<infer E> ? E : never }[number]
+```
+
+**Example:**
+```ts
+const DatabaseError = taggedError('DatabaseError')
+const NetworkError = taggedError('NetworkError')
+const ValidationError = taggedError('ValidationError')
+
+// Before (verbose):
+type AppErrorVerbose = 
+  | InstanceType<typeof DatabaseError>
+  | InstanceType<typeof NetworkError>
+  | InstanceType<typeof ValidationError>
+
+// After (clean):
+type AppError = TaggedUnion<[typeof DatabaseError, typeof NetworkError, typeof ValidationError]>
+// Results in: DatabaseError | NetworkError | ValidationError
+```
+
+#### Automatic Union Inference
+
+When using `goTryRaw` with different error classes in the same function, TypeScript **automatically infers** the union type without needing explicit type annotations:
+
+```ts
+// No explicit return type needed!
+async function fetchUserData(id: string) {
+  // First operation might fail with DatabaseError
+  const [dbErr, user] = await goTryRaw(queryDb(id), DatabaseError)
+  if (dbErr) return failure(dbErr)  // returns Failure<DatabaseError>
+
+  // Second operation might fail with NetworkError  
+  const [netErr, enriched] = await goTryRaw(enrichUser(user!), NetworkError)
+  if (netErr) return failure(netErr)  // returns Failure<NetworkError>
+
+  return success(enriched)  // returns Success<User>
+}
+
+// TypeScript infers: Promise<Result<DatabaseError | NetworkError, User>>
+// No TaggedUnion or explicit types needed!
+```
+
+The inferred union enables exhaustive pattern matching:
+
+```ts
+const [err, user] = await fetchUserData('123')
+if (err) {
+  switch (err._tag) {
+    case 'DatabaseError': /* handle db error */ break
+    case 'NetworkError': /* handle network error */ break
+    default: assertNever(err) // compile-time safety
+  }
+}
+```
+
 ## Types
 
 ```ts
 type Success<T> = readonly [undefined, T]
 type Failure<E> = readonly [E, undefined]
 type Result<E, T> = Success<T> | Failure<E>
+
+// Error type helpers
+type TaggedInstance<T> = T extends ErrorConstructor<infer E> ? E : never
+type TaggedUnion<T extends readonly ErrorConstructor<unknown>[]> = 
+  { [K in keyof T]: T[K] extends ErrorConstructor<infer E> ? E : never }[number]
 ```
 
 ## License
