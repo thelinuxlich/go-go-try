@@ -1,14 +1,10 @@
 import { attest } from '@ark/attest'
 import { assert, describe, test } from 'vitest'
-
-// Helper for exhaustive switch checks - if this function is called,
-// it means we forgot to handle a case in a switch statement
-function assertNever(value: never): never {
-  throw new Error(`Unhandled case: ${String(value)}`)
-}
 import {
   type Result,
   type TaggedUnion,
+  assert as assertTry,
+  assertNever,
   failure,
   goTry,
   goTryAll,
@@ -359,6 +355,190 @@ describe('edge cases', () => {
     assert.equal(value2, undefined)
     assert.equal(err1, '42')
     assert.equal(err2?.message, '42')
+  })
+})
+
+describe('assert helper', () => {
+  test('does not throw when condition is true', () => {
+    // Should not throw
+    assertTry(true, 'should not throw')
+    assertTry(1 > 0, new Error('should not throw'))
+    assertTry('truthy', 'should not throw')
+  })
+
+  test('throws with string message when condition is false', () => {
+    try {
+      assertTry(false, 'custom error message')
+      // Should not reach here
+      assert.equal(true, false)
+    } catch (err) {
+      assert.ok(err instanceof Error)
+      assert.equal((err as Error).message, 'custom error message')
+    }
+  })
+
+  test('throws with Error instance when condition is false', () => {
+    const customError = new Error('custom error instance')
+    try {
+      assertTry(false, customError)
+      // Should not reach here
+      assert.equal(true, false)
+    } catch (err) {
+      assert.equal(err, customError)
+    }
+  })
+
+  test('throws with tagged error when condition is false', () => {
+    const DatabaseError = taggedError('DatabaseError')
+    try {
+      assertTry(false, new DatabaseError('database connection failed'))
+      // Should not reach here
+      assert.equal(true, false)
+    } catch (err) {
+      assert.ok(err instanceof DatabaseError)
+      assert.equal((err as InstanceType<typeof DatabaseError>)._tag, 'DatabaseError')
+      assert.equal((err as Error).message, 'database connection failed')
+    }
+  })
+
+  test('type narrowing works with Result types using err === undefined', () => {
+    const [err, value] = goTry(() => 'success')
+
+    // Before assert: err is string | undefined, value is string | undefined
+    attest<string | undefined>(err)
+    attest<string | undefined>(value)
+
+    // Using err === undefined provides the best type narrowing
+    assertTry(err === undefined, 'should have no error')
+
+    // TypeScript now knows err is undefined and value is string
+    attest<undefined>(err)
+    attest<string>(value)
+    assert.equal(value, 'success')
+  })
+
+  test('type narrowing works with err === undefined check', () => {
+    const [err, value] = goTryRaw(() => ({ id: 1, name: 'test' }))
+
+    // Before assert
+    attest<Error | undefined>(err)
+    attest<{ id: number; name: string } | undefined>(value)
+
+    // Using err === undefined pattern
+    assertTry(err === undefined, new Error('should have no error'))
+
+    // After assert: TypeScript knows err is undefined, value is defined
+    attest<{ id: number; name: string }>(value)
+    assert.deepEqual(value, { id: 1, name: 'test' })
+  })
+
+  test('type narrowing works with tagged errors', () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const [err, user] = goTryRaw(() => ({ id: '123', name: 'John' }), DatabaseError)
+
+    // Before assert
+    attest<InstanceType<typeof DatabaseError> | undefined>(err)
+    attest<{ id: string; name: string } | undefined>(user)
+
+    // Use assert with tagged error
+    assertTry(err === undefined, new DatabaseError('Failed to fetch user'))
+
+    // After assert: TypeScript knows err is undefined, user is defined
+    attest<{ id: string; name: string }>(user)
+    assert.deepEqual(user, { id: '123', name: 'John' })
+  })
+
+  test('reduces boilerplate compared to if(err) throw', () => {
+    const DatabaseError = taggedError('DatabaseError')
+
+    function fetchUserOldStyle(): Result<InstanceType<typeof DatabaseError>, { id: string }> {
+      const [err, user] = goTryRaw(() => ({ id: '123' }), DatabaseError)
+      if (err) return failure(err)  // Old style
+      return [undefined, user] as const
+    }
+
+    function fetchUserNewStyle(): Result<InstanceType<typeof DatabaseError>, { id: string }> {
+      const [err, user] = goTryRaw(() => ({ id: '123' }), DatabaseError)
+      assertTry(err === undefined, new DatabaseError('Failed to fetch user'))
+      // TypeScript now knows user is defined
+      return [undefined, user] as const
+    }
+
+    const [err1, user1] = fetchUserOldStyle()
+    const [err2, user2] = fetchUserNewStyle()
+
+    assert.equal(err1, undefined)
+    assert.equal(err2, undefined)
+    assert.deepEqual(user1, { id: '123' })
+    assert.deepEqual(user2, { id: '123' })
+  })
+
+  test('works with falsy values as condition', () => {
+    // 0 is falsy - should throw
+    assert.throws(() => assertTry(0, 'zero is falsy'))
+
+    // empty string is falsy - should throw
+    assert.throws(() => assertTry('', 'empty string is falsy'))
+
+    // null is falsy - should throw
+    assert.throws(() => assertTry(null, 'null is falsy'))
+
+    // undefined is falsy - should throw
+    assert.throws(() => assertTry(undefined, 'undefined is falsy'))
+
+    // NaN is falsy - should throw
+    assert.throws(() => assertTry(Number.NaN, 'NaN is falsy'))
+  })
+
+  test('works with truthy values as condition', () => {
+    // non-zero number is truthy
+    assertTry(1, new Error('one is truthy'))
+
+    // non-empty string is truthy
+    assertTry('hello', new Error('string is truthy'))
+
+    // object is truthy
+    assertTry({}, new Error('object is truthy'))
+
+    // array is truthy
+    assertTry([], new Error('array is truthy'))
+
+    // true is truthy
+    assertTry(true, new Error('true is truthy'))
+  })
+
+  test('works with ErrorClass and message (shorter syntax)', () => {
+    const ValidationError = taggedError('ValidationError')
+
+    // Should not throw when condition is true
+    assertTry(5 > 0, ValidationError, 'Value must be positive')
+
+    // Should throw with instantiated error when condition is false
+    try {
+      assertTry(-1 > 0, ValidationError, 'Value must be positive')
+      assert.equal(true, false) // Should not reach here
+    } catch (err) {
+      assert.ok(err instanceof ValidationError)
+      assert.equal((err as InstanceType<typeof ValidationError>)._tag, 'ValidationError')
+      assert.equal((err as Error).message, 'Value must be positive')
+    }
+  })
+
+  test('shorter syntax with tagged errors provides type narrowing', () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const [err, user] = goTryRaw(() => ({ id: '123', name: 'John' }), DatabaseError)
+
+    // Before assert
+    attest<InstanceType<typeof DatabaseError> | undefined>(err)
+    attest<{ id: string; name: string } | undefined>(user)
+
+    // Use assert with shorter syntax
+    assertTry(err === undefined, DatabaseError, 'Failed to fetch user')
+
+    // After assert: TypeScript knows err is undefined, user is defined
+    attest<undefined>(err)
+    attest<{ id: string; name: string }>(user)
+    assert.deepEqual(user, { id: '123', name: 'John' })
   })
 })
 
@@ -1079,7 +1259,7 @@ describe('taggedError', () => {
         case 'ValidationError':
           return `VAL: ${err.message}`
         default:
-          return `UNK: ${err.message}`
+          return assertNever(err)
       }
     }
 
@@ -1176,7 +1356,7 @@ describe('TaggedUnion type helper', () => {
         case 'ValidationError':
           return `VAL: ${err.message}`
         default:
-          return `UNK: ${err.message}`
+          return assertNever(err)
       }
     }
 
