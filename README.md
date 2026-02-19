@@ -233,10 +233,10 @@ type AppErrorVerbose =
 
 // Use in functions with typed error returns
 async function fetchUser(id: string): Promise<Result<AppError, User>> {
-  const [dbErr, user] = await goTryRaw(queryDatabase(id), DatabaseError)
+  const [dbErr, user] = await goTryRaw(queryDatabase(id), { errorClass: DatabaseError })
   if (dbErr) return failure(dbErr)
   
-  const [netErr, enriched] = await goTryRaw(enrichUserData(user!), NetworkError)
+  const [netErr, enriched] = await goTryRaw(enrichUserData(user!), { errorClass: NetworkError })
   if (netErr) return failure(netErr)
   
   return [undefined, enriched] as const
@@ -325,18 +325,19 @@ Like `goTry` but returns the raw Error object instead of just the message.
 By default, errors are wrapped in `UnknownError` (a tagged error class). You can customize this behavior with the options object:
 
 ```ts
-interface GoTryRawOptions<E> {
-  errorClass?: ErrorConstructor<E>        // Wrap ALL errors in this class
-  systemErrorClass?: ErrorConstructor<E>  // Only wrap non-tagged errors (defaults to UnknownError)
-}
+type GoTryRawOptions<E> =
+  | { errorClass: ErrorConstructor<E> }           // Wrap ALL errors in this class
+  | { systemErrorClass: ErrorConstructor<E> }     // Only wrap non-tagged errors
+  | {}                                            // Use defaults
 ```
+
+> **Note:** `errorClass` and `systemErrorClass` are **mutually exclusive**. TypeScript will show an error if you try to pass both.
+> - Use `errorClass` when you want all errors wrapped in a specific type
+> - Use `systemErrorClass` when you want tagged errors to pass through and only wrap untagged errors
 
 ```ts
 // Without options - err is UnknownError | undefined
 function goTryRaw<T>(value: T | Promise<T> | (() => T | Promise<T>)): Result<UnknownError, T> | Promise<Result<UnknownError, T>>
-
-// With ErrorClass (legacy API) - err is E | undefined
-function goTryRaw<T, E>(value: T | Promise<T> | (() => T | Promise<T>), ErrorClass: ErrorConstructor<E>): Result<E, T> | Promise<Result<E, T>>
 
 // With options object - err is E | undefined
 function goTryRaw<T, E>(value: T | Promise<T> | (() => T | Promise<T>), options: GoTryRawOptions<E>): Result<E, T> | Promise<Result<E, T>>
@@ -353,17 +354,13 @@ const [err1, data1] = await goTryRaw(fetchData())
 // err1 is UnknownError | undefined
 // err1?._tag === 'UnknownError'
 
-// Legacy API - wrap all errors in specific class
-const [err2, data2] = await goTryRaw(fetchData(), DatabaseError)
+// Options object - wrap all errors
+const [err2, data2] = await goTryRaw(fetchData(), { errorClass: DatabaseError })
 // err2 is DatabaseError | undefined
 // err2?._tag === 'DatabaseError'
 
-// Options object - wrap all errors
-const [err3, data3] = await goTryRaw(fetchData(), { errorClass: DatabaseError })
-// err3 is DatabaseError | undefined
-
 // Options object - systemErrorClass only wraps non-tagged errors
-const [err4, data4] = await goTryRaw(fetchData(), { systemErrorClass: NetworkError })
+const [err3, data3] = await goTryRaw(fetchData(), { systemErrorClass: NetworkError })
 // If fetchData throws a tagged error (e.g., DatabaseError), it passes through
 // If fetchData throws a plain Error, it gets wrapped in NetworkError
 ```
@@ -494,28 +491,24 @@ if (err) {
 }
 ```
 
-You can also use `UnknownError` as your own `systemErrorClass` when you need to distinguish between expected tagged errors and unexpected system errors:
+Since `UnknownError` is the default for `systemErrorClass`, you can distinguish between known tagged errors and unexpected system errors without specifying any options:
 
 ```ts
 const DatabaseError = taggedError('DatabaseError')
 
 function fetchData() {
-  const [err, data] = goTryRaw(() => mightThrow(), { 
-    errorClass: DatabaseError,
-    systemErrorClass: UnknownError 
-  })
+  // Operations that might throw DatabaseError should use errorClass to wrap them
+  const [err1, data1] = goTryRaw(() => queryDatabase(), { errorClass: DatabaseError })
   
-  if (err) {
-    // DatabaseError comes from known failure points
-    // UnknownError comes from unexpected system errors
-    switch (err._tag) {
-      case 'DatabaseError':
-        console.log('Known DB error:', err.message)
-        break
-      case 'UnknownError':
-        console.log('Unexpected error:', err.message)
-        break
-    }
+  // Other operations use the default behavior - non-tagged errors become UnknownError
+  const [err2, data2] = goTryRaw(() => parseData(data1))
+  // err2 is UnknownError | undefined
+  
+  // Now you can distinguish between known and unknown error types
+  if (err1) {
+    console.log('Known DB error:', err1.message)
+  } else if (err2) {
+    console.log('Unexpected error:', err2.message)
   }
 }
 ```
@@ -554,11 +547,11 @@ When using `goTryRaw` with different error classes in the same function, TypeScr
 // No explicit return type needed!
 async function fetchUserData(id: string) {
   // First operation might fail with DatabaseError
-  const [dbErr, user] = await goTryRaw(queryDb(id), DatabaseError)
+  const [dbErr, user] = await goTryRaw(queryDb(id), { errorClass: DatabaseError })
   if (dbErr) return failure(dbErr)  // returns Failure<DatabaseError>
 
   // Second operation might fail with NetworkError  
-  const [netErr, enriched] = await goTryRaw(enrichUser(user!), NetworkError)
+  const [netErr, enriched] = await goTryRaw(enrichUser(user!), { errorClass: NetworkError })
   if (netErr) return failure(netErr)  // returns Failure<NetworkError>
 
   return success(enriched)  // returns Success<User>
@@ -593,11 +586,11 @@ type TaggedInstance<T> = T extends ErrorConstructor<infer E> ? E : never
 type TaggedUnion<T extends readonly ErrorConstructor<unknown>[]> = 
   { [K in keyof T]: T[K] extends ErrorConstructor<infer E> ? E : never }[number]
 
-// Options for goTryRaw
-interface GoTryRawOptions<E> {
-  errorClass?: ErrorConstructor<E>
-  systemErrorClass?: ErrorConstructor<E>
-}
+// Options for goTryRaw (errorClass and systemErrorClass are mutually exclusive)
+type GoTryRawOptions<E> =
+  | { errorClass: ErrorConstructor<E>; systemErrorClass?: never }
+  | { errorClass?: never; systemErrorClass: ErrorConstructor<E> }
+  | { errorClass?: never; systemErrorClass?: never }
 ```
 
 ## License

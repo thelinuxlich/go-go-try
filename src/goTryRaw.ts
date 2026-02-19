@@ -1,4 +1,4 @@
-import type { Result, ErrorConstructor, GoTryRawOptions } from './types.js'
+import type { Result, GoTryRawOptions } from './types.js'
 import { success, failure } from './result-helpers.js'
 import { isPromise, isError } from './internals.js'
 import { UnknownError } from './unknown-error.js'
@@ -17,7 +17,7 @@ function isTaggedError(err: unknown): err is { _tag: string } {
  * @template T The type of the successful result
  * @template E The type of the error
  * @param {T | Promise<T> | (() => T | Promise<T>)} value - The value, promise, or function to execute
- * @param {ErrorConstructor<E> | GoTryRawOptions<E>} [options] - Optional error constructor or options object
+ * @param {GoTryRawOptions<E>} [options] - Optional options object
  * @returns {Result<E, T> | Promise<Result<E, T>>} A Result type or a Promise of a Result type
  *
  * @example
@@ -33,36 +33,21 @@ function isTaggedError(err: unknown): err is { _tag: string } {
  * const [err, result] = await goTryRaw(fetch('https://api.example.com/data'));
  *
  * @example
- * // With tagged error for discriminated unions (legacy API)
- * const DatabaseError = taggedError('DatabaseError');
- * const [err, result] = await goTryRaw(fetchData(), DatabaseError);
- * // err is InstanceType<typeof DatabaseError> | undefined
- *
- * @example
  * // With options object - wrap all errors
  * const DatabaseError = taggedError('DatabaseError');
  * const [err, result] = await goTryRaw(fetchData(), { errorClass: DatabaseError });
  *
  * @example
  * // With options object - systemErrorClass only wraps non-tagged errors
- * const DatabaseError = taggedError('DatabaseError');
- * const [err, result] = await goTryRaw(fetchData(), {
- *   errorClass: DatabaseError,
- *   systemErrorClass: UnknownError
- * });
- * // Errors thrown as DatabaseError remain DatabaseError
+ * const [err, result] = await goTryRaw(fetchData(), { systemErrorClass: UnknownError });
+ * // Errors thrown as tagged errors pass through
  * // Other errors are wrapped in UnknownError
  */
 export function goTryRaw<T>(fn: () => never): Result<Error, never>
-export function goTryRaw<T, E>(fn: () => never, options: ErrorConstructor<E>): Result<E, never>
 export function goTryRaw<T, E = InstanceType<typeof UnknownError>>(fn: () => never, options: GoTryRawOptions<E>): Result<E, never>
 export function goTryRaw<T>(
   fn: () => Promise<T>,
 ): Promise<Result<Error, T>>
-export function goTryRaw<T, E>(
-  fn: () => Promise<T>,
-  options: ErrorConstructor<E>,
-): Promise<Result<E, T>>
 export function goTryRaw<T, E = InstanceType<typeof UnknownError>>(
   fn: () => Promise<T>,
   options: GoTryRawOptions<E>,
@@ -70,31 +55,19 @@ export function goTryRaw<T, E = InstanceType<typeof UnknownError>>(
 export function goTryRaw<T>(
   promise: Promise<T>,
 ): Promise<Result<Error, T>>
-export function goTryRaw<T, E>(
-  promise: Promise<T>,
-  options: ErrorConstructor<E>,
-): Promise<Result<E, T>>
 export function goTryRaw<T, E = InstanceType<typeof UnknownError>>(
   promise: Promise<T>,
   options: GoTryRawOptions<E>,
 ): Promise<Result<E, T>>
 export function goTryRaw<T>(fn: () => T): Result<Error, T>
-export function goTryRaw<T, E>(fn: () => T, options: ErrorConstructor<E>): Result<E, T>
 export function goTryRaw<T, E = InstanceType<typeof UnknownError>>(fn: () => T, options: GoTryRawOptions<E>): Result<E, T>
 export function goTryRaw<T>(value: T): Result<Error, T>
-export function goTryRaw<T, E>(value: T, options: ErrorConstructor<E>): Result<E, T>
 export function goTryRaw<T, E = InstanceType<typeof UnknownError>>(value: T, options: GoTryRawOptions<E>): Result<E, T>
 export function goTryRaw<T, E = Error>(
   value: T | Promise<T> | (() => T | Promise<T>),
-  options?: ErrorConstructor<E> | GoTryRawOptions<E>,
+  options?: GoTryRawOptions<E>,
 ): Result<E, T> | Promise<Result<E, T>> {
-  // Normalize options to GoTryRawOptions format
-  const opts: GoTryRawOptions<E> | undefined =
-    options && 'prototype' in options && typeof options === 'function'
-      ? { errorClass: options as ErrorConstructor<E> }
-      : (options as GoTryRawOptions<E> | undefined)
-
-  const { errorClass, systemErrorClass } = opts || {}
+  const { errorClass, systemErrorClass } = options || {}
 
   // Determine the actual system error class to use
   // Default to UnknownError when systemErrorClass is not specified

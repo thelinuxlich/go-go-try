@@ -322,10 +322,10 @@ describe('edge cases', () => {
     assert.equal(err1, 'custom error')
     // goTryRaw now wraps errors in UnknownError by default
     assert.equal(err2 instanceof UnknownError, true)
-    assert.equal(err2?._tag, 'UnknownError')
+    assert.equal((err2 as InstanceType<typeof UnknownError>)?._tag, 'UnknownError')
     assert.equal(err2?.message, 'custom error')
     // Original error is preserved in cause
-    assert.equal((err2?.cause as CustomError).code, 500)
+    assert.equal(((err2 as unknown as { cause?: unknown })?.cause as CustomError)?.code, 500)
   })
 
   test('throwing a string', () => {
@@ -372,38 +372,41 @@ describe('assert helper', () => {
   })
 
   test('throws with string message when condition is false', () => {
+    let caught = false
     try {
       assertTry(false, 'custom error message')
-      // Should not reach here
-      assert.equal(true, false)
     } catch (err) {
+      caught = true
       assert.ok(err instanceof Error)
       assert.equal((err as Error).message, 'custom error message')
     }
+    assert.equal(caught, true)
   })
 
   test('throws with Error instance when condition is false', () => {
     const customError = new Error('custom error instance')
+    let caught = false
     try {
       assertTry(false, customError)
-      // Should not reach here
-      assert.equal(true, false)
     } catch (err) {
+      caught = true
       assert.equal(err, customError)
     }
+    assert.equal(caught, true)
   })
 
   test('throws with tagged error when condition is false', () => {
     const DatabaseError = taggedError('DatabaseError')
+    let caught = false
     try {
       assertTry(false, new DatabaseError('database connection failed'))
-      // Should not reach here
-      assert.equal(true, false)
     } catch (err) {
+      caught = true
       assert.ok(err instanceof DatabaseError)
       assert.equal((err as InstanceType<typeof DatabaseError>)._tag, 'DatabaseError')
       assert.equal((err as Error).message, 'database connection failed')
     }
+    assert.equal(caught, true)
   })
 
   test('type narrowing works with Result types using err === undefined', () => {
@@ -439,7 +442,7 @@ describe('assert helper', () => {
 
   test('type narrowing works with tagged errors', () => {
     const DatabaseError = taggedError('DatabaseError')
-    const [err, user] = goTryRaw(() => ({ id: '123', name: 'John' }), DatabaseError)
+    const [err, user] = goTryRaw(() => ({ id: '123', name: 'John' }), { errorClass: DatabaseError })
 
     // Before assert
     attest<InstanceType<typeof DatabaseError> | undefined>(err)
@@ -457,13 +460,13 @@ describe('assert helper', () => {
     const DatabaseError = taggedError('DatabaseError')
 
     function fetchUserOldStyle(): Result<InstanceType<typeof DatabaseError>, { id: string }> {
-      const [err, user] = goTryRaw(() => ({ id: '123' }), DatabaseError)
+      const [err, user] = goTryRaw(() => ({ id: '123' }), { errorClass: DatabaseError })
       if (err) return failure(err)  // Old style
       return [undefined, user] as const
     }
 
     function fetchUserNewStyle(): Result<InstanceType<typeof DatabaseError>, { id: string }> {
-      const [err, user] = goTryRaw(() => ({ id: '123' }), DatabaseError)
+      const [err, user] = goTryRaw(() => ({ id: '123' }), { errorClass: DatabaseError })
       assertTry(err === undefined, new DatabaseError('Failed to fetch user'))
       // TypeScript now knows user is defined
       return [undefined, user] as const
@@ -531,7 +534,7 @@ describe('assert helper', () => {
 
   test('shorter syntax with tagged errors provides type narrowing', () => {
     const DatabaseError = taggedError('DatabaseError')
-    const [err, user] = goTryRaw(() => ({ id: '123', name: 'John' }), DatabaseError)
+    const [err, user] = goTryRaw(() => ({ id: '123', name: 'John' }), { errorClass: DatabaseError })
 
     // Before assert
     attest<InstanceType<typeof DatabaseError> | undefined>(err)
@@ -1192,8 +1195,8 @@ describe('taggedError', () => {
     }
 
     // Wrap in functions so goTryRaw can catch the errors
-    const [dbErr, dbResult] = goTryRaw(fetchFromDb, DatabaseError)
-    const [netErr, netResult] = goTryRaw(fetchFromNetwork, NetworkError)
+    const [dbErr, dbResult] = goTryRaw(fetchFromDb, { errorClass: DatabaseError })
+    const [netErr, netResult] = goTryRaw(fetchFromNetwork, { errorClass: NetworkError })
 
     // Type narrowing via discriminated union
     if (dbErr) {
@@ -1219,14 +1222,14 @@ describe('taggedError', () => {
     async function fetchUser(id: string): Promise<Result<AppError, { id: string; name: string }>> {
       const [dbErr, user] = await goTryRaw(
         Promise.resolve({ id, name: 'John' }),
-        DatabaseError,
+        { errorClass: DatabaseError },
       )
       if (dbErr) return failure<AppError>(dbErr)
       return [undefined, user] as const
     }
 
     async function fetchData(): Promise<Result<AppError, string>> {
-      const [netErr, data] = await goTryRaw(Promise.resolve('data'), NetworkError)
+      const [netErr, data] = await goTryRaw(Promise.resolve('data'), { errorClass: NetworkError })
       if (netErr) return failure<AppError>(netErr)
       return [undefined, data] as const
     }
@@ -1379,7 +1382,7 @@ describe('TaggedUnion type helper', () => {
     async function fetchData(): Promise<Result<AppError, string>> {
       const [err, data] = await goTryRaw(
         Promise.reject(new Error('timeout')),
-        NetworkError,
+        { errorClass: NetworkError },
       )
       if (err) return failure<AppError>(err)
       return [undefined, data] as const
@@ -1403,14 +1406,14 @@ describe('inferred return types with tagged errors', () => {
       // First operation might fail with DatabaseError
       const [dbErr, user] = await goTryRaw(
         Promise.resolve({ id, name: 'John' }),
-        DatabaseError,
+        { errorClass: DatabaseError },
       )
       if (dbErr) return failure(dbErr)
 
       // Second operation might fail with NetworkError
       const [netErr, enriched] = await goTryRaw(
         Promise.resolve({ ...user!, email: 'john@example.com' }),
-        NetworkError,
+        { errorClass: NetworkError },
       )
       if (netErr) return failure(netErr)
 
@@ -1448,14 +1451,14 @@ describe('inferred return types with tagged errors', () => {
     // No explicit return type annotation
     function processConfig(input: string) {
       // Parse step
-      const [parseErr, parsed] = goTryRaw(() => JSON.parse(input), ParseError)
+      const [parseErr, parsed] = goTryRaw(() => JSON.parse(input), { errorClass: ParseError })
       if (parseErr) return failure(parseErr)
 
       // Validate step
       const [validateErr, validated] = goTryRaw(() => {
         if (!parsed!.port) throw new Error('Missing port')
         return parsed as { port: number }
-      }, ValidateError)
+      }, { errorClass: ValidateError })
       if (validateErr) return failure(validateErr)
 
       return [undefined, validated] as const
@@ -1486,19 +1489,19 @@ describe('inferred return types with tagged errors', () => {
     async function complexOperation(shouldFail: 'a' | 'b' | 'c' | 'none') {
       const [errA, valA] = await goTryRaw(
         shouldFail === 'a' ? Promise.reject(new Error('a')) : Promise.resolve('step1'),
-        ErrorA,
+        { errorClass: ErrorA },
       )
       if (errA) return failure(errA)
 
       const [errB, valB] = await goTryRaw(
         shouldFail === 'b' ? Promise.reject(new Error('b')) : Promise.resolve('step2'),
-        ErrorB,
+        { errorClass: ErrorB },
       )
       if (errB) return failure(errB)
 
       const [errC, valC] = await goTryRaw(
         shouldFail === 'c' ? Promise.reject(new Error('c')) : Promise.resolve('step3'),
-        ErrorC,
+        { errorClass: ErrorC },
       )
       if (errC) return failure(errC)
 
@@ -1668,8 +1671,6 @@ describe('goTryRaw with options object', () => {
   })
 
   test('systemErrorClass defaults to UnknownError when not specified', () => {
-    const DatabaseError = taggedError('DatabaseError')
-
     const fn = () => {
       throw new Error('plain error')
     }
@@ -1679,25 +1680,6 @@ describe('goTryRaw with options object', () => {
     assert.equal(value, undefined)
     assert.ok(err instanceof UnknownError)
     assert.equal(err._tag, 'UnknownError')
-  })
-
-  test('combining errorClass and systemErrorClass', () => {
-    const DatabaseError = taggedError('DatabaseError')
-    const SystemError = taggedError('SystemError')
-
-    // errorClass takes precedence - all errors wrapped in errorClass
-    const fn = () => {
-      throw new Error('plain error')
-    }
-
-    const [err, value] = goTryRaw(fn, {
-      errorClass: DatabaseError,
-      systemErrorClass: SystemError,
-    })
-
-    assert.equal(value, undefined)
-    assert.ok(err instanceof DatabaseError)
-    assert.equal(err._tag, 'DatabaseError')
   })
 
   test('async with options object', async () => {
@@ -1712,33 +1694,6 @@ describe('goTryRaw with options object', () => {
     assert.equal(err._tag, 'DatabaseError')
   })
 
-  test('backward compatibility with ErrorClass parameter', () => {
-    const DatabaseError = taggedError('DatabaseError')
-
-    const fn = () => {
-      throw new Error('plain error')
-    }
-
-    // Legacy API: passing ErrorClass directly as second parameter
-    const [err, value] = goTryRaw(fn, DatabaseError)
-
-    assert.equal(value, undefined)
-    assert.ok(err instanceof DatabaseError)
-    assert.equal(err._tag, 'DatabaseError')
-  })
-
-  test('backward compatibility with ErrorClass for async', async () => {
-    const DatabaseError = taggedError('DatabaseError')
-
-    const promise = Promise.reject(new Error('async error'))
-
-    // Legacy API: passing ErrorClass directly as second parameter
-    const [err, value] = await goTryRaw(promise, DatabaseError)
-
-    assert.equal(value, undefined)
-    assert.ok(err instanceof DatabaseError)
-    assert.equal(err._tag, 'DatabaseError')
-  })
 })
 
 describe('goTryRaw options type tests', () => {
@@ -1747,7 +1702,7 @@ describe('goTryRaw options type tests', () => {
     const SystemError = taggedError('SystemError')
 
     // Wrap in a function so goTryRaw can catch the error
-    const [err, value] = goTryRaw(() => {
+    const [err, _value] = goTryRaw(() => {
       throw new DatabaseError('db error')
     }, { systemErrorClass: SystemError })
 

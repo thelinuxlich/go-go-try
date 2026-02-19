@@ -67,8 +67,7 @@ function isTaggedError(err) {
   return isError(err) && "_tag" in err && typeof err._tag === "string";
 }
 function goTryRaw(value, options) {
-  const opts = options && "prototype" in options && typeof options === "function" ? { errorClass: options } : options;
-  const { errorClass, systemErrorClass } = opts || {};
+  const { errorClass, systemErrorClass } = options || {};
   const actualSystemErrorClass = systemErrorClass ?? UnknownError;
   const wrapError = (err) => {
     if (errorClass) {

@@ -40,20 +40,12 @@ export type IsTaggedError<T> = T extends { _tag: string } ? true : false
 
 /**
  * Options for goTryRaw function.
+ * errorClass and systemErrorClass are mutually exclusive - you can only provide one.
  */
-export interface GoTryRawOptions<E = Error> {
-  /**
-   * Error class to wrap all caught errors with.
-   * If provided, all errors will be wrapped in this class.
-   */
-  errorClass?: ErrorConstructor<E>
-  /**
-   * Error class to wrap system/unexpected errors with.
-   * Only applies to errors that are not already wrapped in a tagged error class.
-   * Defaults to UnknownError if not specified.
-   */
-  systemErrorClass?: ErrorConstructor<E>
-}
+export type GoTryRawOptions<E = Error> =
+  | { errorClass: ErrorConstructor<E>; systemErrorClass?: never }
+  | { errorClass?: never; systemErrorClass: ErrorConstructor<E> }
+  | { errorClass?: never; systemErrorClass?: never }
 
 /**
  * Creates a union type from multiple tagged error classes.
