@@ -50,16 +50,47 @@ function goTry(value) {
   }
 }
 
-function goTryRaw(value, ErrorClass) {
+function taggedError(tag) {
+  return class TaggedErrorClass extends Error {
+    constructor(message, options) {
+      super(message);
+      this._tag = tag;
+      this.name = tag;
+      this.cause = options?.cause;
+    }
+  };
+}
+
+const UnknownError = taggedError("UnknownError");
+
+function isTaggedError(err) {
+  return isError(err) && "_tag" in err && typeof err._tag === "string";
+}
+function goTryRaw(value, options) {
+  const opts = options && "prototype" in options && typeof options === "function" ? { errorClass: options } : options;
+  const { errorClass, systemErrorClass } = opts || {};
+  const actualSystemErrorClass = systemErrorClass ?? UnknownError;
   const wrapError = (err) => {
-    if (ErrorClass) {
+    if (errorClass) {
       if (err === void 0) {
-        return new ErrorClass("undefined");
+        return new errorClass("undefined");
       }
       if (isError(err)) {
-        return new ErrorClass(err.message, { cause: err });
+        return new errorClass(err.message, { cause: err });
       }
-      return new ErrorClass(String(err));
+      return new errorClass(String(err));
+    }
+    if (actualSystemErrorClass) {
+      if (isTaggedError(err)) {
+        return err;
+      }
+      if (err === void 0) {
+        return new actualSystemErrorClass("undefined");
+      }
+      if (isError(err)) {
+        return new actualSystemErrorClass(err.message, { cause: err });
+      }
+      return new actualSystemErrorClass(String(err));
     }
     if (err === void 0) {
       return new Error("undefined");
@@ -153,17 +184,6 @@ async function goTryAllRaw(items, options) {
   return [errors, results];
 }
 
-function taggedError(tag) {
-  return class TaggedErrorClass extends Error {
-    constructor(message, options) {
-      super(message);
-      this._tag = tag;
-      this.name = tag;
-      this.cause = options?.cause;
-    }
-  };
-}
-
 function assert(condition, errorOrClass, message) {
   if (!condition) {
     if (typeof errorOrClass === "string") {
@@ -176,6 +196,7 @@ function assert(condition, errorOrClass, message) {
   }
 }
 
+exports.UnknownError = UnknownError;
 exports.assert = assert;
 exports.assertNever = assertNever;
 exports.failure = failure;

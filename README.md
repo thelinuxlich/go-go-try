@@ -46,10 +46,10 @@ const [err, todos = []] = await goTry(fetchTodos()) // err is string | undefined
 if (err) sendToErrorTrackingService(err)
 
 // goTry extracts the error message from the error object, if you want the raw error object, use goTryRaw
-const [err, value] = goTryRaw(() => JSON.parse('{/}')) // err is Error | undefined, value is T | undefined
+const [err, value] = goTryRaw(() => JSON.parse('{/}')) // err is UnknownError | undefined, value is T | undefined
 
 // fetch todos, fallback to empty array, send error to your error tracking service
-const [err, todos = []] = await goTryRaw(fetchTodos()) // err is Error | undefined
+const [err, todos = []] = await goTryRaw(fetchTodos()) // err is UnknownError | undefined
 if (err) sendToErrorTrackingService(err)
 ```
 
@@ -318,32 +318,54 @@ Executes a function, promise, or value and returns a Result type with error mess
 function goTry<T>(value: T | Promise<T> | (() => T | Promise<T>)): Result<string, T> | Promise<Result<string, T>>
 ```
 
-### `goTryRaw<T, E>(value, ErrorClass?)`
+### `goTryRaw<T, E>(value, options?)`
 
 Like `goTry` but returns the raw Error object instead of just the message.
 
-Optionally accepts an error constructor to wrap caught errors - useful with `taggedError` for discriminated unions.
+By default, errors are wrapped in `UnknownError` (a tagged error class). You can customize this behavior with the options object:
 
 ```ts
-// Without ErrorClass - err is Error | undefined
-function goTryRaw<T, E = Error>(value: T | Promise<T> | (() => T | Promise<T>)): Result<E, T> | Promise<Result<E, T>>
-
-// With ErrorClass - err is E | undefined (e.g., DatabaseError | undefined)
-function goTryRaw<T, E>(value: T | Promise<T> | (() => T | Promise<T>), ErrorClass: ErrorConstructor<E>): Result<E, T> | Promise<Result<E, T>>
+interface GoTryRawOptions<E> {
+  errorClass?: ErrorConstructor<E>        // Wrap ALL errors in this class
+  systemErrorClass?: ErrorConstructor<E>  // Only wrap non-tagged errors (defaults to UnknownError)
+}
 ```
 
-**Example:**
+```ts
+// Without options - err is UnknownError | undefined
+function goTryRaw<T>(value: T | Promise<T> | (() => T | Promise<T>)): Result<UnknownError, T> | Promise<Result<UnknownError, T>>
+
+// With ErrorClass (legacy API) - err is E | undefined
+function goTryRaw<T, E>(value: T | Promise<T> | (() => T | Promise<T>), ErrorClass: ErrorConstructor<E>): Result<E, T> | Promise<Result<E, T>>
+
+// With options object - err is E | undefined
+function goTryRaw<T, E>(value: T | Promise<T> | (() => T | Promise<T>), options: GoTryRawOptions<E>): Result<E, T> | Promise<Result<E, T>>
+```
+
+**Examples:**
+
 ```ts
 const DatabaseError = taggedError('DatabaseError')
+const NetworkError = taggedError('NetworkError')
 
-// Raw error (default)
+// Default - errors wrapped in UnknownError
 const [err1, data1] = await goTryRaw(fetchData())
-// err1 is Error | undefined
+// err1 is UnknownError | undefined
+// err1?._tag === 'UnknownError'
 
-// Tagged error
+// Legacy API - wrap all errors in specific class
 const [err2, data2] = await goTryRaw(fetchData(), DatabaseError)
 // err2 is DatabaseError | undefined
-// err2._tag is 'DatabaseError' - enables discriminated unions
+// err2?._tag === 'DatabaseError'
+
+// Options object - wrap all errors
+const [err3, data3] = await goTryRaw(fetchData(), { errorClass: DatabaseError })
+// err3 is DatabaseError | undefined
+
+// Options object - systemErrorClass only wraps non-tagged errors
+const [err4, data4] = await goTryRaw(fetchData(), { systemErrorClass: NetworkError })
+// If fetchData throws a tagged error (e.g., DatabaseError), it passes through
+// If fetchData throws a plain Error, it gets wrapped in NetworkError
 ```
 
 ### `goTryAll<T>(items, options?)`
@@ -453,6 +475,51 @@ console.log(err.name)    // 'DatabaseError'
 console.log(err.cause)   // originalError
 ```
 
+### `UnknownError`
+
+A default tagged error class used by `goTryRaw` when no options are provided, or when `systemErrorClass` is not specified in the options object.
+
+```ts
+import { UnknownError, goTryRaw } from 'go-go-try'
+
+// Errors are automatically wrapped in UnknownError
+const [err, data] = goTryRaw(() => {
+  throw new Error('something went wrong')
+})
+
+if (err) {
+  console.log(err._tag)    // 'UnknownError'
+  console.log(err.message) // 'something went wrong'
+  console.log(err.cause)   // original Error
+}
+```
+
+You can also use `UnknownError` as your own `systemErrorClass` when you need to distinguish between expected tagged errors and unexpected system errors:
+
+```ts
+const DatabaseError = taggedError('DatabaseError')
+
+function fetchData() {
+  const [err, data] = goTryRaw(() => mightThrow(), { 
+    errorClass: DatabaseError,
+    systemErrorClass: UnknownError 
+  })
+  
+  if (err) {
+    // DatabaseError comes from known failure points
+    // UnknownError comes from unexpected system errors
+    switch (err._tag) {
+      case 'DatabaseError':
+        console.log('Known DB error:', err.message)
+        break
+      case 'UnknownError':
+        console.log('Unexpected error:', err.message)
+        break
+    }
+  }
+}
+```
+
 ### `TaggedUnion<T>`
 
 Creates a union type from multiple tagged error classes.
@@ -525,6 +592,12 @@ type Result<E, T> = Success<T> | Failure<E>
 type TaggedInstance<T> = T extends ErrorConstructor<infer E> ? E : never
 type TaggedUnion<T extends readonly ErrorConstructor<unknown>[]> = 
   { [K in keyof T]: T[K] extends ErrorConstructor<infer E> ? E : never }[number]
+
+// Options for goTryRaw
+interface GoTryRawOptions<E> {
+  errorClass?: ErrorConstructor<E>
+  systemErrorClass?: ErrorConstructor<E>
+}
 ```
 
 ## License

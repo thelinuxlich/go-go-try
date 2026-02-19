@@ -34,6 +34,28 @@ export interface GoTryAllOptions {
 export type ErrorConstructor<E> = new (message: string, options?: { cause?: unknown }) => E
 
 /**
+ * Checks if a value is a tagged error (has a _tag property).
+ */
+export type IsTaggedError<T> = T extends { _tag: string } ? true : false
+
+/**
+ * Options for goTryRaw function.
+ */
+export interface GoTryRawOptions<E = Error> {
+  /**
+   * Error class to wrap all caught errors with.
+   * If provided, all errors will be wrapped in this class.
+   */
+  errorClass?: ErrorConstructor<E>
+  /**
+   * Error class to wrap system/unexpected errors with.
+   * Only applies to errors that are not already wrapped in a tagged error class.
+   * Defaults to UnknownError if not specified.
+   */
+  systemErrorClass?: ErrorConstructor<E>
+}
+
+/**
  * Creates a union type from multiple tagged error classes.
  *
  * @template T A tuple of tagged error class types

@@ -15,6 +15,7 @@ import {
   isSuccess,
   success,
   taggedError,
+  UnknownError,
 } from './index.js'
 
 test(`value returned by callback is used when callback doesn't throw`, async () => {
@@ -319,8 +320,12 @@ describe('edge cases', () => {
     assert.equal(value1, undefined)
     assert.equal(value2, undefined)
     assert.equal(err1, 'custom error')
-    assert.equal(err2 instanceof CustomError, true)
-    assert.equal((err2 as CustomError).code, 500)
+    // goTryRaw now wraps errors in UnknownError by default
+    assert.equal(err2 instanceof UnknownError, true)
+    assert.equal(err2?._tag, 'UnknownError')
+    assert.equal(err2?.message, 'custom error')
+    // Original error is preserved in cause
+    assert.equal((err2?.cause as CustomError).code, 500)
   })
 
   test('throwing a string', () => {
@@ -1528,5 +1533,254 @@ describe('inferred return types with tagged errors', () => {
       await handleOperation('none'),
       'Success: {"valA":"step1","valB":"step2","valC":"step3"}',
     )
+  })
+})
+
+
+describe('UnknownError', () => {
+  test('UnknownError is exported as a tagged error class', () => {
+    const err = new UnknownError('something went wrong')
+    assert.equal(err._tag, 'UnknownError')
+    assert.equal(err.message, 'something went wrong')
+    assert.equal(err.name, 'UnknownError')
+    assert.ok(err instanceof Error)
+    assert.ok(err instanceof UnknownError)
+  })
+
+  test('UnknownError supports cause option', () => {
+    const cause = new Error('original error')
+    const err = new UnknownError('wrapped error', { cause })
+    assert.equal(err.cause, cause)
+  })
+
+  test('goTryRaw defaults to UnknownError for system errors', () => {
+    const fn = () => {
+      throw new Error('system error')
+    }
+
+    const [err, value] = goTryRaw(fn)
+
+    assert.equal(value, undefined)
+    assert.ok(err instanceof UnknownError)
+    assert.equal(err._tag, 'UnknownError')
+    assert.equal(err.message, 'system error')
+  })
+
+  test('goTryRaw defaults to UnknownError for thrown strings', () => {
+    const fn = () => {
+      throw 'string error'
+    }
+
+    const [err, value] = goTryRaw(fn)
+
+    assert.equal(value, undefined)
+    assert.ok(err instanceof UnknownError)
+    assert.equal(err._tag, 'UnknownError')
+    assert.equal(err.message, 'string error')
+  })
+
+  test('goTryRaw defaults to UnknownError for thrown undefined', () => {
+    const fn = () => {
+      throw undefined
+    }
+
+    const [err, value] = goTryRaw(fn)
+
+    assert.equal(value, undefined)
+    assert.ok(err instanceof UnknownError)
+    assert.equal(err._tag, 'UnknownError')
+    assert.equal(err.message, 'undefined')
+  })
+
+  test('goTryRaw with async defaults to UnknownError', async () => {
+    const promise = Promise.reject(new Error('async error'))
+
+    const [err, value] = await goTryRaw(promise)
+
+    assert.equal(value, undefined)
+    assert.ok(err instanceof UnknownError)
+    assert.equal(err._tag, 'UnknownError')
+    assert.equal(err.message, 'async error')
+  })
+})
+
+describe('goTryRaw with options object', () => {
+  test('errorClass wraps all errors including tagged ones', () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const NetworkError = taggedError('NetworkError')
+
+    // When a DatabaseError is thrown, it gets wrapped in NetworkError
+    const fn = () => {
+      throw new DatabaseError('db connection failed')
+    }
+
+    const [err, value] = goTryRaw(fn, { errorClass: NetworkError })
+
+    assert.equal(value, undefined)
+    assert.ok(err instanceof NetworkError)
+    assert.equal(err._tag, 'NetworkError')
+    assert.equal(err.message, 'db connection failed')
+    // Original error is preserved in cause
+    assert.ok(err.cause instanceof DatabaseError)
+  })
+
+  test('errorClass wraps non-tagged errors', () => {
+    const NetworkError = taggedError('NetworkError')
+
+    const fn = () => {
+      throw new Error('plain error')
+    }
+
+    const [err, value] = goTryRaw(fn, { errorClass: NetworkError })
+
+    assert.equal(value, undefined)
+    assert.ok(err instanceof NetworkError)
+    assert.equal(err._tag, 'NetworkError')
+    assert.equal(err.message, 'plain error')
+  })
+
+  test('systemErrorClass only wraps non-tagged errors', () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const SystemError = taggedError('SystemError')
+
+    // Tagged errors should pass through
+    const fnTagged = () => {
+      throw new DatabaseError('db error')
+    }
+
+    const [err1, value1] = goTryRaw(fnTagged, { systemErrorClass: SystemError })
+
+    assert.equal(value1, undefined)
+    assert.ok(err1 instanceof DatabaseError)
+    assert.equal(err1._tag, 'DatabaseError')
+
+    // Non-tagged errors should be wrapped
+    const fnPlain = () => {
+      throw new Error('system error')
+    }
+
+    const [err2, value2] = goTryRaw(fnPlain, { systemErrorClass: SystemError })
+
+    assert.equal(value2, undefined)
+    assert.ok(err2 instanceof SystemError)
+    assert.equal(err2._tag, 'SystemError')
+    assert.equal(err2.message, 'system error')
+  })
+
+  test('systemErrorClass defaults to UnknownError when not specified', () => {
+    const DatabaseError = taggedError('DatabaseError')
+
+    const fn = () => {
+      throw new Error('plain error')
+    }
+
+    const [err, value] = goTryRaw(fn, {})
+
+    assert.equal(value, undefined)
+    assert.ok(err instanceof UnknownError)
+    assert.equal(err._tag, 'UnknownError')
+  })
+
+  test('combining errorClass and systemErrorClass', () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const SystemError = taggedError('SystemError')
+
+    // errorClass takes precedence - all errors wrapped in errorClass
+    const fn = () => {
+      throw new Error('plain error')
+    }
+
+    const [err, value] = goTryRaw(fn, {
+      errorClass: DatabaseError,
+      systemErrorClass: SystemError,
+    })
+
+    assert.equal(value, undefined)
+    assert.ok(err instanceof DatabaseError)
+    assert.equal(err._tag, 'DatabaseError')
+  })
+
+  test('async with options object', async () => {
+    const DatabaseError = taggedError('DatabaseError')
+
+    const promise = Promise.reject(new Error('async error'))
+
+    const [err, value] = await goTryRaw(promise, { errorClass: DatabaseError })
+
+    assert.equal(value, undefined)
+    assert.ok(err instanceof DatabaseError)
+    assert.equal(err._tag, 'DatabaseError')
+  })
+
+  test('backward compatibility with ErrorClass parameter', () => {
+    const DatabaseError = taggedError('DatabaseError')
+
+    const fn = () => {
+      throw new Error('plain error')
+    }
+
+    // Legacy API: passing ErrorClass directly as second parameter
+    const [err, value] = goTryRaw(fn, DatabaseError)
+
+    assert.equal(value, undefined)
+    assert.ok(err instanceof DatabaseError)
+    assert.equal(err._tag, 'DatabaseError')
+  })
+
+  test('backward compatibility with ErrorClass for async', async () => {
+    const DatabaseError = taggedError('DatabaseError')
+
+    const promise = Promise.reject(new Error('async error'))
+
+    // Legacy API: passing ErrorClass directly as second parameter
+    const [err, value] = await goTryRaw(promise, DatabaseError)
+
+    assert.equal(value, undefined)
+    assert.ok(err instanceof DatabaseError)
+    assert.equal(err._tag, 'DatabaseError')
+  })
+})
+
+describe('goTryRaw options type tests', () => {
+  test('systemErrorClass preserves tagged errors', () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const SystemError = taggedError('SystemError')
+
+    // Wrap in a function so goTryRaw can catch the error
+    const [err, value] = goTryRaw(() => {
+      throw new DatabaseError('db error')
+    }, { systemErrorClass: SystemError })
+
+    // Type is systemErrorClass since TypeScript cannot know which tagged errors
+    // might be thrown at runtime (tagged errors pass through, others get wrapped)
+    attest<InstanceType<typeof SystemError> | undefined>(err)
+
+    // But at runtime, tagged errors are preserved
+    if (err) {
+      assert.equal(err._tag, 'DatabaseError')
+    }
+  })
+
+  test('errorClass wraps all errors to specified type', () => {
+    const DatabaseError = taggedError('DatabaseError')
+
+    const [err, value] = goTryRaw(() => 'test', { errorClass: DatabaseError })
+
+    attest<InstanceType<typeof DatabaseError> | undefined>(err)
+    attest<string | undefined>(value)
+  })
+
+  test('no options defaults to Error type (backward compatible)', () => {
+    const [err, value] = goTryRaw(() => 'test')
+
+    attest<Error | undefined>(err)
+    attest<string | undefined>(value)
+  })
+
+  test('empty options object defaults to UnknownError type', () => {
+    const [err, value] = goTryRaw(() => 'test', {})
+
+    attest<InstanceType<typeof UnknownError> | undefined>(err)
+    attest<string | undefined>(value)
   })
 })

@@ -29,6 +29,22 @@ type ErrorConstructor<E> = new (message: string, options?: {
     cause?: unknown;
 }) => E;
 /**
+ * Options for goTryRaw function.
+ */
+interface GoTryRawOptions<E = Error> {
+    /**
+     * Error class to wrap all caught errors with.
+     * If provided, all errors will be wrapped in this class.
+     */
+    errorClass?: ErrorConstructor<E>;
+    /**
+     * Error class to wrap system/unexpected errors with.
+     * Only applies to errors that are not already wrapped in a tagged error class.
+     * Defaults to UnknownError if not specified.
+     */
+    systemErrorClass?: ErrorConstructor<E>;
+}
+/**
  * Creates a union type from multiple tagged error classes.
  *
  * @template T A tuple of tagged error class types
@@ -72,13 +88,43 @@ declare function goTry<T>(fn: () => T): Result<string, T>;
 declare function goTry<T>(value: T): Result<string, T>;
 
 /**
+ * Default system error class for errors that aren't already wrapped in a tagged error class.
+ *
+ * @example
+ * // By default, goTryRaw wraps unknown errors in UnknownError
+ * const [err, result] = goTryRaw(() => mightThrow())
+ * if (err) {
+ *   console.log(err._tag) // 'UnknownError'
+ * }
+ *
+ * @example
+ * // Use a custom system error class
+ * const SystemError = taggedError('SystemError')
+ * const [err, result] = goTryRaw(() => mightThrow(), {
+ *   systemErrorClass: SystemError
+ * })
+ */
+declare const UnknownError: {
+    new (message: string, options?: {
+        cause?: unknown;
+    } | undefined): {
+        readonly _tag: "UnknownError";
+        readonly cause?: unknown;
+        name: string;
+        message: string;
+        stack?: string;
+    };
+    isError(error: unknown): error is Error;
+};
+
+/**
  * Executes a function, promise, or value and returns a Result type.
  * If an error occurs, it returns a Failure with the raw error object.
  *
  * @template T The type of the successful result
- * @template E The type of the error, defaults to Error
+ * @template E The type of the error
  * @param {T | Promise<T> | (() => T | Promise<T>)} value - The value, promise, or function to execute
- * @param {ErrorConstructor<E>} [ErrorClass] - Optional error constructor to wrap caught errors
+ * @param {ErrorConstructor<E> | GoTryRawOptions<E>} [options] - Optional error constructor or options object
  * @returns {Result<E, T> | Promise<Result<E, T>>} A Result type or a Promise of a Result type
  *
  * @example
@@ -94,21 +140,41 @@ declare function goTry<T>(value: T): Result<string, T>;
  * const [err, result] = await goTryRaw(fetch('https://api.example.com/data'));
  *
  * @example
- * // With tagged error for discriminated unions
+ * // With tagged error for discriminated unions (legacy API)
  * const DatabaseError = taggedError('DatabaseError');
  * const [err, result] = await goTryRaw(fetchData(), DatabaseError);
  * // err is InstanceType<typeof DatabaseError> | undefined
+ *
+ * @example
+ * // With options object - wrap all errors
+ * const DatabaseError = taggedError('DatabaseError');
+ * const [err, result] = await goTryRaw(fetchData(), { errorClass: DatabaseError });
+ *
+ * @example
+ * // With options object - systemErrorClass only wraps non-tagged errors
+ * const DatabaseError = taggedError('DatabaseError');
+ * const [err, result] = await goTryRaw(fetchData(), {
+ *   errorClass: DatabaseError,
+ *   systemErrorClass: UnknownError
+ * });
+ * // Errors thrown as DatabaseError remain DatabaseError
+ * // Other errors are wrapped in UnknownError
  */
-declare function goTryRaw<T, E = Error>(fn: () => never): Result<E, never>;
-declare function goTryRaw<T, E = Error>(fn: () => never, ErrorClass: ErrorConstructor<E>): Result<E, never>;
-declare function goTryRaw<T, E = Error>(fn: () => Promise<T>): Promise<Result<E, T>>;
-declare function goTryRaw<T, E = Error>(fn: () => Promise<T>, ErrorClass: ErrorConstructor<E>): Promise<Result<E, T>>;
-declare function goTryRaw<T, E = Error>(promise: Promise<T>): Promise<Result<E, T>>;
-declare function goTryRaw<T, E = Error>(promise: Promise<T>, ErrorClass: ErrorConstructor<E>): Promise<Result<E, T>>;
-declare function goTryRaw<T, E = Error>(fn: () => T): Result<E, T>;
-declare function goTryRaw<T, E = Error>(fn: () => T, ErrorClass: ErrorConstructor<E>): Result<E, T>;
-declare function goTryRaw<T, E = Error>(value: T): Result<E, T>;
-declare function goTryRaw<T, E = Error>(value: T, ErrorClass: ErrorConstructor<E>): Result<E, T>;
+declare function goTryRaw<T>(fn: () => never): Result<Error, never>;
+declare function goTryRaw<T, E>(fn: () => never, options: ErrorConstructor<E>): Result<E, never>;
+declare function goTryRaw<T, E = InstanceType<typeof UnknownError>>(fn: () => never, options: GoTryRawOptions<E>): Result<E, never>;
+declare function goTryRaw<T>(fn: () => Promise<T>): Promise<Result<Error, T>>;
+declare function goTryRaw<T, E>(fn: () => Promise<T>, options: ErrorConstructor<E>): Promise<Result<E, T>>;
+declare function goTryRaw<T, E = InstanceType<typeof UnknownError>>(fn: () => Promise<T>, options: GoTryRawOptions<E>): Promise<Result<E, T>>;
+declare function goTryRaw<T>(promise: Promise<T>): Promise<Result<Error, T>>;
+declare function goTryRaw<T, E>(promise: Promise<T>, options: ErrorConstructor<E>): Promise<Result<E, T>>;
+declare function goTryRaw<T, E = InstanceType<typeof UnknownError>>(promise: Promise<T>, options: GoTryRawOptions<E>): Promise<Result<E, T>>;
+declare function goTryRaw<T>(fn: () => T): Result<Error, T>;
+declare function goTryRaw<T, E>(fn: () => T, options: ErrorConstructor<E>): Result<E, T>;
+declare function goTryRaw<T, E = InstanceType<typeof UnknownError>>(fn: () => T, options: GoTryRawOptions<E>): Result<E, T>;
+declare function goTryRaw<T>(value: T): Result<Error, T>;
+declare function goTryRaw<T, E>(value: T, options: ErrorConstructor<E>): Result<E, T>;
+declare function goTryRaw<T, E = InstanceType<typeof UnknownError>>(value: T, options: GoTryRawOptions<E>): Result<E, T>;
 
 /**
  * Executes a function, promise, or value and returns a Result type with a fallback default.
@@ -301,6 +367,6 @@ declare function failure<E>(error: E): Failure<E>;
  */
 declare function assertNever(value: never): never;
 
-export { assert, assertNever, failure, goTry, goTryAll, goTryAllRaw, goTryOr, goTryRaw, isFailure, isSuccess, success, taggedError };
-export type { ErrorConstructor, Failure, GoTryAllOptions, MaybePromise, Result, ResultWithDefault, Success, TaggedError, TaggedUnion };
+export { UnknownError, assert, assertNever, failure, goTry, goTryAll, goTryAllRaw, goTryOr, goTryRaw, isFailure, isSuccess, success, taggedError };
+export type { ErrorConstructor, Failure, GoTryAllOptions, GoTryRawOptions, MaybePromise, Result, ResultWithDefault, Success, TaggedError, TaggedUnion };
 //# sourceMappingURL=index.d.mts.map

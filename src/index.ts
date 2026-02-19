@@ -9,6 +9,7 @@ export type {
   GoTryAllOptions,
   ErrorConstructor,
   TaggedUnion,
+  GoTryRawOptions,
 } from './types.js'
 
 // Export core functions
@@ -21,3 +22,6 @@ export { goTryAll, goTryAllRaw } from './goTryAll.js'
 export { taggedError } from './tagged-error.js'
 export { assert } from './assert.js'
 export { isSuccess, isFailure, success, failure, assertNever } from './result-helpers.js'
+
+// Export UnknownError tagged error
+export { UnknownError } from './unknown-error.js'
