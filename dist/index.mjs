@@ -61,7 +61,7 @@ function taggedError(tag) {
 
 const UnknownError = taggedError("UnknownError");
 
-function isTaggedError(err) {
+function isTaggedError$1(err) {
   return isError(err) && "_tag" in err && typeof err._tag === "string";
 }
 function goTryRaw(value, options) {
@@ -78,7 +78,7 @@ function goTryRaw(value, options) {
       return new errorClass(String(err));
     }
     if (actualSystemErrorClass) {
-      if (isTaggedError(err)) {
+      if (isTaggedError$1(err)) {
         return err;
       }
       if (err === void 0) {
@@ -117,6 +117,31 @@ function goTryOr(value, defaultValue) {
   }
 }
 
+function isTaggedError(err) {
+  return isError(err) && "_tag" in err && typeof err._tag === "string";
+}
+function wrapError(err, errorClass, systemErrorClass) {
+  if (errorClass) {
+    if (err === void 0) {
+      return new errorClass("undefined");
+    }
+    if (isError(err)) {
+      return new errorClass(err.message, { cause: err });
+    }
+    return new errorClass(String(err));
+  }
+  const actualSystemErrorClass = systemErrorClass ?? UnknownError;
+  if (isTaggedError(err)) {
+    return err;
+  }
+  if (err === void 0) {
+    return new actualSystemErrorClass("undefined");
+  }
+  if (isError(err)) {
+    return new actualSystemErrorClass(err.message, { cause: err });
+  }
+  return new actualSystemErrorClass(String(err));
+}
 async function runWithConcurrency(items, concurrency) {
   if (items.length === 0) {
     return [];
@@ -164,6 +189,7 @@ async function goTryAll(items, options) {
   return [errors, results];
 }
 async function goTryAllRaw(items, options) {
+  const { errorClass, systemErrorClass } = options || {};
   const settled = await runWithConcurrency(items, options?.concurrency ?? 0);
   const errors = [];
   const results = [];
@@ -174,7 +200,7 @@ async function goTryAllRaw(items, options) {
       results[i] = item.value;
     } else {
       const reason = item.reason;
-      errors[i] = isError(reason) ? reason : new Error(String(reason));
+      errors[i] = wrapError(reason, errorClass, systemErrorClass);
       results[i] = void 0;
     }
   }

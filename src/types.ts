@@ -48,6 +48,16 @@ export type GoTryRawOptions<E = Error> =
   | { errorClass?: never; systemErrorClass?: never }
 
 /**
+ * Options for goTryAllRaw function.
+ * Includes concurrency control and error class options.
+ * errorClass and systemErrorClass are mutually exclusive.
+ */
+export type GoTryAllRawOptions<E = Error> =
+  | { concurrency?: number; errorClass: ErrorConstructor<E>; systemErrorClass?: never }
+  | { concurrency?: number; errorClass?: never; systemErrorClass: ErrorConstructor<E> }
+  | { concurrency?: number; errorClass?: never; systemErrorClass?: never }
+
+/**
  * Creates a union type from multiple tagged error classes.
  *
  * @template T A tuple of tagged error class types

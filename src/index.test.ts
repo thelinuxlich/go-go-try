@@ -1107,7 +1107,7 @@ describe('goTryAllRaw', () => {
     assert.deepEqual(results, ['a', 42, true])
   })
 
-  test('returns Error objects for failed promises', async () => {
+  test('wraps non-tagged errors in UnknownError', async () => {
     const [errors, results] = await goTryAllRaw([
       Promise.resolve('success'),
       Promise.reject(new Error('fail1')),
@@ -1115,6 +1115,8 @@ describe('goTryAllRaw', () => {
     ])
 
     assert.equal(errors[0], undefined)
+    assert.ok(errors[1] instanceof UnknownError)
+    assert.equal(errors[1]?._tag, 'UnknownError')
     assert.equal(errors[1]?.message, 'fail1')
     assert.equal(errors[2], undefined)
 
@@ -1123,15 +1125,44 @@ describe('goTryAllRaw', () => {
     assert.equal(results[2], 42)
   })
 
-  test('converts non-Error rejections to Error objects', async () => {
+  test('tagged errors pass through unchanged', async () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const NetworkError = taggedError('NetworkError')
+
+    const [errors] = await goTryAllRaw([
+      Promise.reject(new DatabaseError('db failed')),
+      Promise.reject(new NetworkError('network timeout')),
+      Promise.reject(new Error('plain error')),
+    ])
+
+    // Tagged errors pass through
+    assert.ok(errors[0] instanceof DatabaseError)
+    assert.equal(errors[0]?._tag, 'DatabaseError')
+    assert.equal(errors[0]?.message, 'db failed')
+    assert.ok(errors[1] instanceof NetworkError)
+    assert.equal(errors[1]?._tag, 'NetworkError')
+    assert.equal(errors[1]?.message, 'network timeout')
+    // Non-tagged errors get wrapped in UnknownError
+    assert.ok(errors[2] instanceof UnknownError)
+    assert.equal(errors[2]?._tag, 'UnknownError')
+    assert.equal(errors[2]?.message, 'plain error')
+  })
+
+  test('converts non-Error rejections to UnknownError objects', async () => {
     const [errors] = await goTryAllRaw([
       Promise.reject('string error'),
       Promise.reject(42),
       Promise.reject(undefined),
     ])
 
+    assert.ok(errors[0] instanceof UnknownError)
+    assert.equal(errors[0]?._tag, 'UnknownError')
     assert.equal(errors[0]?.message, 'string error')
+    assert.ok(errors[1] instanceof UnknownError)
+    assert.equal(errors[1]?._tag, 'UnknownError')
     assert.equal(errors[1]?.message, '42')
+    assert.ok(errors[2] instanceof UnknownError)
+    assert.equal(errors[2]?._tag, 'UnknownError')
     assert.equal(errors[2]?.message, 'undefined')
   })
 
@@ -1140,6 +1171,60 @@ describe('goTryAllRaw', () => {
 
     assert.deepEqual(errors, [])
     assert.deepEqual(results, [])
+  })
+
+  test('errorClass wraps all errors', async () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const NetworkError = taggedError('NetworkError')
+
+    const [errors] = await goTryAllRaw([
+      Promise.reject(new DatabaseError('db error')),
+      Promise.reject(new NetworkError('network error')),
+      Promise.reject(new Error('plain error')),
+    ], { errorClass: DatabaseError })
+
+    // All errors should be wrapped in DatabaseError
+    assert.ok(errors[0] instanceof DatabaseError)
+    assert.equal(errors[0]?._tag, 'DatabaseError')
+    assert.ok(errors[1] instanceof DatabaseError)
+    assert.equal(errors[1]?._tag, 'DatabaseError')
+    assert.ok(errors[2] instanceof DatabaseError)
+    assert.equal(errors[2]?._tag, 'DatabaseError')
+  })
+
+  test('systemErrorClass only wraps non-tagged errors', async () => {
+    const DatabaseError = taggedError('DatabaseError')
+    const NetworkError = taggedError('NetworkError')
+    const SystemError = taggedError('SystemError')
+
+    const [errors] = await goTryAllRaw([
+      Promise.reject(new DatabaseError('db error')),
+      Promise.reject(new NetworkError('network error')),
+      Promise.reject(new Error('plain error')),
+    ], { systemErrorClass: SystemError })
+
+    // Tagged errors pass through
+    assert.ok(errors[0] instanceof DatabaseError)
+    assert.equal(errors[0]?._tag, 'DatabaseError')
+    assert.ok(errors[1] instanceof NetworkError)
+    assert.equal(errors[1]?._tag, 'NetworkError')
+    // Non-tagged error wrapped in SystemError
+    assert.ok(errors[2] instanceof SystemError)
+    assert.equal(errors[2]?._tag, 'SystemError')
+  })
+
+  test('concurrency option works with errorClass', async () => {
+    const DatabaseError = taggedError('DatabaseError')
+
+    const [errors] = await goTryAllRaw([
+      Promise.reject(new Error('error 1')),
+      Promise.reject(new Error('error 2')),
+      Promise.reject(new Error('error 3')),
+    ], { concurrency: 2, errorClass: DatabaseError })
+
+    assert.ok(errors[0] instanceof DatabaseError)
+    assert.ok(errors[1] instanceof DatabaseError)
+    assert.ok(errors[2] instanceof DatabaseError)
   })
 })
 

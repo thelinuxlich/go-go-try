@@ -43,6 +43,24 @@ type GoTryRawOptions<E = Error> = {
     systemErrorClass?: never;
 };
 /**
+ * Options for goTryAllRaw function.
+ * Includes concurrency control and error class options.
+ * errorClass and systemErrorClass are mutually exclusive.
+ */
+type GoTryAllRawOptions<E = Error> = {
+    concurrency?: number;
+    errorClass: ErrorConstructor<E>;
+    systemErrorClass?: never;
+} | {
+    concurrency?: number;
+    errorClass?: never;
+    systemErrorClass: ErrorConstructor<E>;
+} | {
+    concurrency?: number;
+    errorClass?: never;
+    systemErrorClass?: never;
+};
+/**
  * Creates a union type from multiple tagged error classes.
  *
  * @template T A tuple of tagged error class types
@@ -227,18 +245,25 @@ declare function goTryAll<T extends readonly unknown[]>(items: {
 }]>;
 /**
  * Like `goTryAll`, but returns raw Error objects instead of error messages.
+ * Non-tagged errors are wrapped in `UnknownError` by default (consistent with `goTryRaw`).
+ * Tagged errors pass through unchanged.
+ *
+ * Supports `errorClass` and `systemErrorClass` options (mutually exclusive):
+ * - `errorClass`: Wrap ALL errors in the specified class
+ * - `systemErrorClass`: Only wrap non-tagged errors (defaults to UnknownError)
  *
  * @template T The tuple type of all promise results
+ * @template E The type of the error
  * @param {readonly [...{ [K in keyof T]: Promise<T[K]> | (() => Promise<T[K]>) }]} items - Array of promises or factories
- * @param {GoTryAllOptions} options - Optional configuration
- * @returns {Promise<[{ [K in keyof T]: Error | undefined }, { [K in keyof T]: T[K] | undefined }]>}
+ * @param {GoTryAllRawOptions<E>} options - Optional configuration
+ * @returns {Promise<[{ [K in keyof T]: E | undefined }, { [K in keyof T]: T[K] | undefined }]>}
  *          A tuple where the first element is a tuple of Error objects (or undefined) and
  *          the second element is a tuple of results (or undefined), preserving input order
  */
-declare function goTryAllRaw<T extends readonly unknown[]>(items: {
+declare function goTryAllRaw<T extends readonly unknown[], E = InstanceType<typeof UnknownError>>(items: {
     [K in keyof T]: Promise<T[K]> | (() => Promise<T[K]>);
-}, options?: GoTryAllOptions): Promise<[{
-    [K in keyof T]: Error | undefined;
+}, options?: GoTryAllRawOptions<E>): Promise<[{
+    [K in keyof T]: E | undefined;
 }, {
     [K in keyof T]: T[K] | undefined;
 }]>;
@@ -351,5 +376,5 @@ declare function failure<E>(error: E): Failure<E>;
 declare function assertNever(value: never): never;
 
 export { UnknownError, assert, assertNever, failure, goTry, goTryAll, goTryAllRaw, goTryOr, goTryRaw, isFailure, isSuccess, success, taggedError };
-export type { ErrorConstructor, Failure, GoTryAllOptions, GoTryRawOptions, MaybePromise, Result, ResultWithDefault, Success, TaggedError, TaggedUnion };
+export type { ErrorConstructor, Failure, GoTryAllOptions, GoTryAllRawOptions, GoTryRawOptions, MaybePromise, Result, ResultWithDefault, Success, TaggedError, TaggedUnion };
 //# sourceMappingURL=index.d.mts.map

@@ -408,15 +408,50 @@ const [errors, results] = await goTryAll([
 // - Limit expensive computation resources
 ```
 
-### `goTryAllRaw<T>(items, options?)`
+### `goTryAllRaw<T, E>(items, options?)`
 
 Like `goTryAll`, but returns raw Error objects instead of error messages.
+Non-tagged errors are wrapped in `UnknownError` by default (consistent with `goTryRaw`).
+Tagged errors pass through unchanged.
+
+Supports the same `errorClass` and `systemErrorClass` options as `goTryRaw`, plus `concurrency` control.
 
 ```ts
-function goTryAllRaw<T extends readonly unknown[]>(
+interface GoTryAllRawOptions<E> {
+  concurrency?: number
+  // errorClass and systemErrorClass are mutually exclusive
+  errorClass?: ErrorConstructor<E>        // Wrap ALL errors
+  systemErrorClass?: ErrorConstructor<E>  // Only wrap non-tagged errors
+}
+
+function goTryAllRaw<T extends readonly unknown[], E = UnknownError>(
   items: { [K in keyof T]: Promise<T[K]> | (() => Promise<T[K]>) },
-  options?: GoTryAllOptions
-): Promise<[{ [K in keyof T]: Error | undefined }, { [K in keyof T]: T[K] | undefined }]>
+  options?: GoTryAllRawOptions<E>
+): Promise<[{ [K in keyof T]: E | undefined }, { [K in keyof T]: T[K] | undefined }]>
+```
+
+**Example:**
+```ts
+const DatabaseError = taggedError('DatabaseError')
+
+// Default behavior - non-tagged errors wrapped in UnknownError
+const [errors1] = await goTryAllRaw([
+  fetchUser(1),
+  fetchUser(2),
+])
+
+// Wrap all errors in DatabaseError
+const [errors2] = await goTryAllRaw([
+  fetchUser(1),
+  fetchUser(2),
+], { errorClass: DatabaseError })
+
+// Combine concurrency control with errorClass
+const [errors3] = await goTryAllRaw([
+  () => fetchUser(1),
+  () => fetchUser(2),
+  () => fetchUser(3),
+], { concurrency: 2, errorClass: DatabaseError })
 ```
 
 ### `goTryOr<T>(value, defaultValue)`
@@ -591,6 +626,12 @@ type GoTryRawOptions<E> =
   | { errorClass: ErrorConstructor<E>; systemErrorClass?: never }
   | { errorClass?: never; systemErrorClass: ErrorConstructor<E> }
   | { errorClass?: never; systemErrorClass?: never }
+
+// Options for goTryAllRaw (includes concurrency + error class options)
+type GoTryAllRawOptions<E> =
+  | { concurrency?: number; errorClass: ErrorConstructor<E>; systemErrorClass?: never }
+  | { concurrency?: number; errorClass?: never; systemErrorClass: ErrorConstructor<E> }
+  | { concurrency?: number; errorClass?: never; systemErrorClass?: never }
 ```
 
 ## License

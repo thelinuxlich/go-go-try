@@ -1,5 +1,43 @@
-import type { GoTryAllOptions } from './types.js'
+import type { GoTryAllOptions, GoTryAllRawOptions, ErrorConstructor } from './types.js'
 import { isError, getErrorMessage, type PromiseFactory } from './internals.js'
+import { UnknownError } from './unknown-error.js'
+
+/**
+ * Checks if a value is a tagged error (has a _tag property).
+ */
+function isTaggedError(err: unknown): err is { _tag: string } {
+  return isError(err) && '_tag' in err && typeof (err as { _tag?: unknown })._tag === 'string'
+}
+
+/**
+ * Wraps an error based on the provided options (errorClass/systemErrorClass).
+ * Consistent with goTryRaw behavior.
+ */
+function wrapError<E>(err: unknown, errorClass: ErrorConstructor<E> | undefined, systemErrorClass: ErrorConstructor<E> | undefined): E {
+  // If errorClass is specified, wrap all errors with it
+  if (errorClass) {
+    if (err === undefined) {
+      return new errorClass('undefined')
+    }
+    if (isError(err)) {
+      return new errorClass(err.message, { cause: err })
+    }
+    return new errorClass(String(err))
+  }
+
+  // If systemErrorClass is specified (or defaulted to UnknownError), only wrap non-tagged errors
+  const actualSystemErrorClass = systemErrorClass ?? UnknownError
+  if (isTaggedError(err)) {
+    return err as unknown as E
+  }
+  if (err === undefined) {
+    return new actualSystemErrorClass('undefined') as unknown as E
+  }
+  if (isError(err)) {
+    return new actualSystemErrorClass(err.message, { cause: err }) as unknown as E
+  }
+  return new actualSystemErrorClass(String(err)) as unknown as E
+}
 
 async function runWithConcurrency<T extends readonly unknown[]>(
   items: { [K in keyof T]: Promise<T[K]> | PromiseFactory<T[K]> },
@@ -106,33 +144,39 @@ export async function goTryAll<T extends readonly unknown[]>(
 
 /**
  * Like `goTryAll`, but returns raw Error objects instead of error messages.
+ * Non-tagged errors are wrapped in `UnknownError` by default (consistent with `goTryRaw`).
+ * Tagged errors pass through unchanged.
+ *
+ * Supports `errorClass` and `systemErrorClass` options (mutually exclusive):
+ * - `errorClass`: Wrap ALL errors in the specified class
+ * - `systemErrorClass`: Only wrap non-tagged errors (defaults to UnknownError)
  *
  * @template T The tuple type of all promise results
+ * @template E The type of the error
  * @param {readonly [...{ [K in keyof T]: Promise<T[K]> | (() => Promise<T[K]>) }]} items - Array of promises or factories
- * @param {GoTryAllOptions} options - Optional configuration
- * @returns {Promise<[{ [K in keyof T]: Error | undefined }, { [K in keyof T]: T[K] | undefined }]>}
+ * @param {GoTryAllRawOptions<E>} options - Optional configuration
+ * @returns {Promise<[{ [K in keyof T]: E | undefined }, { [K in keyof T]: T[K] | undefined }]>}
  *          A tuple where the first element is a tuple of Error objects (or undefined) and
  *          the second element is a tuple of results (or undefined), preserving input order
  */
-export async function goTryAllRaw<T extends readonly unknown[]>(
+export async function goTryAllRaw<T extends readonly unknown[], E = InstanceType<typeof UnknownError>>(
   items: { [K in keyof T]: Promise<T[K]> | (() => Promise<T[K]>) },
-  options?: GoTryAllOptions,
-): Promise<[{ [K in keyof T]: Error | undefined }, { [K in keyof T]: T[K] | undefined }]> {
+  options?: GoTryAllRawOptions<E>,
+): Promise<[{ [K in keyof T]: E | undefined }, { [K in keyof T]: T[K] | undefined }]> {
+  const { errorClass, systemErrorClass } = options || {}
   const settled = await runWithConcurrency(items, options?.concurrency ?? 0)
 
-  const errors = [] as { [K in keyof T]: Error | undefined }
+  const errors = [] as { [K in keyof T]: E | undefined }
   const results = [] as { [K in keyof T]: T[K] | undefined }
 
   for (let i = 0; i < settled.length; i++) {
     const item = settled[i]!
     if (item.status === 'fulfilled') {
-      ;(errors as (Error | undefined)[])[i] = undefined
+      ;(errors as (E | undefined)[])[i] = undefined
       ;(results as unknown[])[i] = (item as PromiseFulfilledResult<T[number]>).value
     } else {
       const reason = (item as PromiseRejectedResult).reason
-      ;(errors as (Error | undefined)[])[i] = isError(reason)
-        ? reason
-        : new Error(String(reason))
+      ;(errors as (E | undefined)[])[i] = wrapError(reason, errorClass, systemErrorClass)
       ;(results as unknown[])[i] = undefined
     }
   }

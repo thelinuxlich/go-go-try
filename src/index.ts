@@ -10,6 +10,7 @@ export type {
   ErrorConstructor,
   TaggedUnion,
   GoTryRawOptions,
+  GoTryAllRawOptions,
 } from './types.js'
 
 // Export core functions
