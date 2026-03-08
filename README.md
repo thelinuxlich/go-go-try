@@ -33,24 +33,43 @@ npm install go-go-try
 ## Basic Usage
 
 ```ts
-import { goTry, goTryRaw } from 'go-go-try'
+import { go } from 'go-go-try'
 
 // tries to parse todos, returns empty array if it fails
-const [_, value = []] = goTry(() => JSON.parse(todos))
+const [_, value = []] = go(() => JSON.parse(todos))
 
 // fetch todos, on error, fallback to empty array
-const [_, todos = []] = await goTry(fetchTodos())
+const [_, todos = []] = await go(fetchTodos())
 
 // fetch todos, fallback to empty array, send error to your error tracking service
-const [err, todos = []] = await goTry(fetchTodos()) // err is string | undefined
+const [err, todos = []] = await go(fetchTodos()) // err is UnknownError | undefined
 if (err) sendToErrorTrackingService(err)
 
-// goTry extracts the error message from the error object, if you want the raw error object, use goTryRaw
-const [err, value] = goTryRaw(() => JSON.parse('{/}')) // err is UnknownError | undefined, value is T | undefined
+// go() is the short alias for goTryRaw - returns the raw Error object
+const [err, value] = go(() => JSON.parse('{/}')) // err is UnknownError | undefined, value is T | undefined
+```
 
-// fetch todos, fallback to empty array, send error to your error tracking service
-const [err, todos = []] = await goTryRaw(fetchTodos()) // err is UnknownError | undefined
-if (err) sendToErrorTrackingService(err)
+## Short Aliases (v8.0+)
+
+For cleaner code, use the short aliases:
+
+```ts
+import { go, goAll, goElse, ensure } from 'go-go-try'
+
+// go() - alias for goTryRaw
+const [err, user] = await go(fetchUser(id))
+
+// goAll() - alias for goTryAllRaw
+const [errors, results] = await goAll([
+  () => fetchUser(1),
+  () => fetchUser(2),
+])
+
+// goElse() - like go() but with fallback default, returns Error object
+const [err, config] = await goElse(loadConfig(), { port: 3000 })
+
+// ensure() - validate values, throws if predicate fails
+const res = await ensure(fetch('/api'), r => r.ok, RequestFailed)
 ```
 
 ## Advanced Usage
@@ -86,52 +105,70 @@ if (err) {
 }
 ```
 
-### Parallel Execution with `goTryAll`
+### Parallel Execution with `goAll`
 
 Execute multiple promises in parallel:
 
 ```ts
-import { goTryAll } from 'go-go-try'
+import { goAll } from 'go-go-try'
 
-const [errors, results] = await goTryAll([
-  fetchUser(userId),
-  fetchPosts(userId),
-  fetchComments(userId)
+const [errors, results] = await goAll([
+  () => fetchUser(userId),
+  () => fetchPosts(userId),
+  () => fetchComments(userId)
 ])
 
-// errors is [string | undefined, string | undefined, string | undefined]
+// errors is [UnknownError | undefined, UnknownError | undefined, UnknownError | undefined]
 // results is [User | undefined, Posts | undefined, Comments | undefined]
 
 const [user, posts, comments] = results
 ```
 
-### Safe Unwrapping with `goTryOr`
+### Safe Unwrapping with `goElse` (recommended) or `goTryOr`
 
-Like `goTry`, but returns a default value on failure instead of `undefined`:
+Both return a default value on failure, but `goElse` is more flexible:
+
+```ts
+import { goElse, goTryOr } from 'go-go-try'
+
+// goElse() returns [Error, default] on failure - preserves full error object
+const [err, user] = await goElse(fetchUser(id), () => ({
+  id: 'anonymous',
+  name: 'Guest'
+}))
+// err is Error | undefined (full error with stack trace)
+
+// goTryOr() returns [string, default] - just the error message
+const [errMsg, user] = await goTryOr(fetchUser(id), () => ({
+  id: 'anonymous',
+  name: 'Guest'
+}))
+// errMsg is string | undefined
+
+// ✅ Use goElse when you need the full Error object for logging/tracking
+const [err, data] = await goElse(fetchData(), defaultData)
+if (err) {
+  errorTracker.capture(err)  // Full error with stack trace
+}
+
+// ✅ Use goTryOr when you only need the error message
+const [err, data] = await goTryOr(fetchData(), defaultData)
+if (err) {
+  console.error('Failed:', err)  // Just the message
+}
+```
 
 > **Note:** For static default values, you can use destructuring instead:
 > ```ts
 > // These are equivalent for static defaults:
-> const [err, config = {port: 3000}] = goTry(() => JSON.parse(configString))
-> const [err, config] = goTryOr(() => JSON.parse(configString), {port: 3000})
+> const [err, config = {port: 3000}] = go(() => JSON.parse(configString))
+> const [err, config] = goElse(() => JSON.parse(configString), {port: 3000})
 > ```
-> Use `goTryOr` when you need **lazy evaluation** (the default is only computed on failure):
+> Use `goElse`/`goTryOr` when you need **lazy evaluation** (the default is only computed on failure):
 
 ```ts
-import { goTryOr } from 'go-go-try'
-
-// ✅ Use goTryOr with a function for lazy evaluation - default only computed on failure
-const [err, user] = await goTryOr(fetchUser(id), () => ({
-  id: 'anonymous',
-  name: 'Guest',
-  createdAt: new Date()  // This won't run on success
-}))
-
-// ❌ Avoid: wasteful - createDefault() runs even on success
-const [err, config = createDefault()] = goTry(loadConfig())
-
-// ✅ Better: lazy - createDefault() only runs on failure
-const [err, config] = goTryOr(loadConfig(), () => createDefault())
+// ✅ Lazy - createDefault() only runs on failure
+const [err, config] = goElse(loadConfig(), () => createDefault())
 ```
 
 ### Express/Fastify Error Handling
@@ -156,8 +193,8 @@ app.post('/users', async (req, res) => {
 
 // Batch endpoint
 app.post('/batch', async (req, res) => {
-  const [errors, results] = await goTryAll(
-    req.body.operations.map(op => processOperation(op))
+  const [errors, results] = await goAll(
+    req.body.operations.map((op: unknown) => () => processOperation(op))
   )
   
   const hasErrors = errors.some(e => e !== undefined)
@@ -207,7 +244,7 @@ if (err === undefined) {
 Create typed errors with a `_tag` property for pattern matching and discriminated unions:
 
 ```ts
-import { taggedError, goTryRaw, failure, type Result } from 'go-go-try'
+import { taggedError, go, failure, type Result } from 'go-go-try'
 
 // Define error types
 const DatabaseError = taggedError('DatabaseError')
@@ -233,10 +270,10 @@ type AppErrorVerbose =
 
 // Use in functions with typed error returns
 async function fetchUser(id: string): Promise<Result<AppError, User>> {
-  const [dbErr, user] = await goTryRaw(queryDatabase(id), { errorClass: DatabaseError })
+  const [dbErr, user] = await go(queryDatabase(id), { errorClass: DatabaseError })
   if (dbErr) return failure(dbErr)
   
-  const [netErr, enriched] = await goTryRaw(enrichUserData(user!), { errorClass: NetworkError })
+  const [netErr, enriched] = await go(enrichUserData(user!), { errorClass: NetworkError })
   if (netErr) return failure(netErr)
   
   return [undefined, enriched] as const
@@ -284,6 +321,37 @@ The `taggedError` function creates an error class with:
 - `cause`: Optional cause for error chaining
 - `name`: Set to the tag value
 
+### Validation with `ensure`
+
+Validate values with predicates - throws if validation fails. Works with sync values, promises, and functions:
+
+```ts
+import { ensure, go } from 'go-go-try'
+
+// Validate a sync value
+const num = ensure(42, n => n > 0)  // returns 42
+ensure(-1, n => n > 0)  // throws UnknownError
+
+// Validate a promise (awaits internally)
+const res = await ensure(fetch('/api'), r => r.ok, RequestFailed)
+
+// Validate with error class
+const res = ensure(value, v => isValid(v), ValidationError)
+
+// Validate with custom error factory
+const res = ensure(
+  response,
+  r => r.status === 200,
+  r => new Error(`HTTP ${r.status}`)
+)
+
+// Chain with go() for error handling
+const [err, data] = await go(async () => {
+  const res = await ensure(fetch('/api'), r => r.ok, RequestFailed)
+  return res.json()
+})
+```
+
 ### Helper Functions
 
 Build custom utilities on top of the primitives:
@@ -309,6 +377,101 @@ if (err) {
 ```
 
 ## API
+
+### Short Aliases
+
+#### `go<T>(value)`
+
+Alias for `goTryRaw`. The most common way to wrap operations.
+
+```ts
+function go<T>(value: T | Promise<T> | (() => T | Promise<T>)): Result<UnknownError, T> | Promise<Result<UnknownError, T>>
+```
+
+```ts
+import { go } from 'go-go-try'
+
+const [err, data] = await go(fetch('/api'))
+const [err, value] = go(() => JSON.parse('{"key": "value"}'))
+```
+
+#### `goAll<T>(items, options?)`
+
+Alias for `goTryAllRaw`. Execute multiple operations in parallel.
+
+```ts
+function goAll<T extends readonly unknown[]>(
+  items: { [K in keyof T]: Promise<T[K]> | (() => Promise<T[K]>) },
+  options?: { concurrency?: number }
+): Promise<[{ [K in keyof T]: UnknownError | undefined }, { [K in keyof T]: T[K] | undefined }]>
+```
+
+```ts
+import { goAll } from 'go-go-try'
+
+const [errors, results] = await goAll([
+  () => fetchUser(1),
+  () => fetchUser(2),
+  () => fetchUser(3),
+], { concurrency: 2 })
+```
+
+#### `goElse<T, D>(value, defaultValue)`
+
+Returns a default value on failure. Like `go()` but never returns `undefined` for the value.
+
+```ts
+function goElse<T, D = T>(
+  value: T | Promise<T> | (() => T | Promise<T>),
+  defaultValue: D | (() => D)
+): ResultWithDefault<Error, T, D> | Promise<ResultWithDefault<Error, T, D>>
+
+// ResultWithDefault<E, T, D> = readonly [E, D] | readonly [undefined, T]
+```
+
+```ts
+import { goElse } from 'go-go-try'
+
+// With static default
+const [err, config] = await goElse(loadConfig(), { port: 3000 })
+
+// With lazy default (function only called on failure)
+const [err, user] = await goElse(fetchUser(id), () => ({
+  id: 'anonymous',
+  name: 'Guest'
+}))
+```
+
+#### `ensure<T>(value, predicate, error?)`
+
+Validates a value against a predicate. Throws if the predicate returns false.
+
+```ts
+function ensure<T>(
+  value: T | Promise<T> | (() => T | Promise<T>),
+  predicate: (value: T) => boolean,
+  error?: ErrorConstructor<Error> | ((value: T) => Error)
+): T | Promise<T>
+```
+
+```ts
+import { ensure } from 'go-go-try'
+
+// Sync validation
+const num = ensure(42, n => n > 0)  // returns 42
+ensure(-1, n => n > 0)  // throws UnknownError
+
+// Async validation (promise awaited internally)
+const res = await ensure(fetch('/api'), r => r.ok, RequestFailed)
+
+// With error class
+ensure(value, isValid, ValidationError)
+
+// With custom error
+ensure(response, r => r.ok, r => new Error(`HTTP ${r.status}`))
+```
+
+### Full Function Names
 
 ### `goTry<T>(value)`
 
@@ -383,19 +546,19 @@ function goTryAll<T extends readonly unknown[]>(
 **Promise mode** (pass promises directly):
 ```ts
 // Run all in parallel (default):
-const [errors, results] = await goTryAll([
+const [errors, results] = await goAll([
   fetchUser(1),      // Promise<User>
   fetchUser(2),      // Promise<User>
   fetchUser(3),      // Promise<User>
 ])
-// errors: [string | undefined, string | undefined, string | undefined]
+// errors: [UnknownError | undefined, UnknownError | undefined, UnknownError | undefined]
 // results: [User | undefined, User | undefined, User | undefined]
 ```
 
 **Factory mode** (pass functions that return promises):
 ```ts
 // True lazy execution - factories only called when a slot is available
-const [errors, results] = await goTryAll([
+const [errors, results] = await goAll([
   () => fetchUser(1),  // Only called when concurrency slot available
   () => fetchUser(2),  // Only called when concurrency slot available
   () => fetchUser(3),  // Only called when concurrency slot available
@@ -454,13 +617,26 @@ const [errors3] = await goTryAllRaw([
 ], { concurrency: 2, errorClass: DatabaseError })
 ```
 
-### `goTryOr<T>(value, defaultValue)`
+### `goElse<T, D>(value, defaultValue)` / `goTryOr<T>(value, defaultValue)`
 
-Like `goTry`, but returns a default value on failure instead of `undefined`.
-The default can be either a static value or a function (for lazy evaluation).
+Both return a default value on failure instead of `undefined`. `goElse` is the recommended alias.
 
+**`goElse`** returns the full `Error` object:
+```ts
+function goElse<T, D = T>(value: T | Promise<T> | (() => T | Promise<T>), defaultValue: D | (() => D)): ResultWithDefault<Error, T, D> | Promise<ResultWithDefault<Error, T, D>>
+```
+
+**`goTryOr`** returns only the error message (string):
 ```ts
 function goTryOr<T>(value: T | Promise<T> | (() => T | Promise<T>), defaultValue: T | (() => T)): Result<string, T> | Promise<Result<string, T>>
+```
+
+**Recommendation:** Use `goElse` when you need the full error for logging/tracking:
+```ts
+const [err, data] = await goElse(fetchData(), defaultData)
+if (err) {
+  errorTracker.capture(err)  // Full error with stack trace
+}
 ```
 
 ### `isSuccess(result)` / `isFailure(result)`
@@ -512,10 +688,10 @@ console.log(err.cause)   // originalError
 A default tagged error class used by `goTryRaw` when no options are provided, or when `systemErrorClass` is not specified in the options object.
 
 ```ts
-import { UnknownError, goTryRaw } from 'go-go-try'
+import { UnknownError, go } from 'go-go-try'
 
 // Errors are automatically wrapped in UnknownError
-const [err, data] = goTryRaw(() => {
+const [err, data] = go(() => {
   throw new Error('something went wrong')
 })
 
@@ -533,10 +709,10 @@ const DatabaseError = taggedError('DatabaseError')
 
 function fetchData() {
   // Operations that might throw DatabaseError should use errorClass to wrap them
-  const [err1, data1] = goTryRaw(() => queryDatabase(), { errorClass: DatabaseError })
+  const [err1, data1] = go(() => queryDatabase(), { errorClass: DatabaseError })
   
   // Other operations use the default behavior - non-tagged errors become UnknownError
-  const [err2, data2] = goTryRaw(() => parseData(data1))
+  const [err2, data2] = go(() => parseData(data1))
   // err2 is UnknownError | undefined
   
   // Now you can distinguish between known and unknown error types
@@ -582,11 +758,11 @@ When using `goTryRaw` with different error classes in the same function, TypeScr
 // No explicit return type needed!
 async function fetchUserData(id: string) {
   // First operation might fail with DatabaseError
-  const [dbErr, user] = await goTryRaw(queryDb(id), { errorClass: DatabaseError })
+  const [dbErr, user] = await go(queryDb(id), { errorClass: DatabaseError })
   if (dbErr) return failure(dbErr)  // returns Failure<DatabaseError>
 
   // Second operation might fail with NetworkError  
-  const [netErr, enriched] = await goTryRaw(enrichUser(user!), { errorClass: NetworkError })
+  const [netErr, enriched] = await go(enrichUser(user!), { errorClass: NetworkError })
   if (netErr) return failure(netErr)  // returns Failure<NetworkError>
 
   return success(enriched)  // returns Success<User>
@@ -615,6 +791,7 @@ if (err) {
 type Success<T> = readonly [undefined, T]
 type Failure<E> = readonly [E, undefined]
 type Result<E, T> = Success<T> | Failure<E>
+type ResultWithDefault<E, T, D = T> = readonly [E, D] | readonly [undefined, T]  // For goElse/goTryOr
 
 // Error type helpers
 type TaggedInstance<T> = T extends ErrorConstructor<infer E> ? E : never
