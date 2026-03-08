@@ -28,7 +28,7 @@ function getErrorMessage(error) {
     return String(error);
   }
 }
-function isPromise(value) {
+function isPromise$1(value) {
   return typeof value === "object" && value !== null && "then" in value && typeof value.then === "function";
 }
 function isError(value) {
@@ -41,7 +41,7 @@ function resolveDefault(defaultValue) {
 function goTry(value) {
   try {
     const result = typeof value === "function" ? value() : value;
-    if (isPromise(result)) {
+    if (isPromise$1(result)) {
       return result.then((resolvedValue) => success(resolvedValue)).catch((err) => failure(getErrorMessage(err)));
     }
     return success(result);
@@ -98,7 +98,7 @@ function goTryRaw(value, options) {
   };
   try {
     const result = typeof value === "function" ? value() : value;
-    if (isPromise(result)) {
+    if (isPromise$1(result)) {
       return result.then((resolvedValue) => success(resolvedValue)).catch((err) => failure(wrapError(err)));
     }
     return success(result);
@@ -110,7 +110,7 @@ function goTryRaw(value, options) {
 function goTryOr(value, defaultValue) {
   try {
     const result = typeof value === "function" ? value() : value;
-    if (isPromise(result)) {
+    if (isPromise$1(result)) {
       return result.then((resolvedValue) => success(resolvedValue)).catch((err) => [getErrorMessage(err), resolveDefault(defaultValue)]);
     }
     return success(result);
@@ -221,10 +221,72 @@ function assert(condition, errorOrClass, message) {
   }
 }
 
+function isPromise(value) {
+  return value instanceof Promise;
+}
+function isErrorConstructor(error) {
+  return typeof error === "function" && error.prototype !== void 0 && error.prototype instanceof Error;
+}
+function throwError(value, error) {
+  if (isErrorConstructor(error)) {
+    throw new error(String(value), { cause: value });
+  }
+  throw error(value);
+}
+function ensure(value, predicate, error = UnknownError) {
+  if (typeof value === "function") {
+    const result = value();
+    if (isPromise(result)) {
+      return result.then((resolved) => {
+        if (!predicate(resolved)) {
+          throwError(resolved, error);
+        }
+        return resolved;
+      });
+    }
+    if (!predicate(result)) {
+      throwError(result, error);
+    }
+    return result;
+  }
+  if (isPromise(value)) {
+    return value.then((resolved) => {
+      if (!predicate(resolved)) {
+        throwError(resolved, error);
+      }
+      return resolved;
+    });
+  }
+  if (!predicate(value)) {
+    throwError(value, error);
+  }
+  return value;
+}
+
+function goElse(value, defaultValue) {
+  try {
+    const result = typeof value === "function" ? value() : value;
+    if (isPromise$1(result)) {
+      return result.then((resolvedValue) => [void 0, resolvedValue]).catch((err) => {
+        const error = err instanceof Error ? err : new Error(String(err));
+        return [error, resolveDefault(defaultValue)];
+      });
+    }
+    return [void 0, result];
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    return [error, resolveDefault(defaultValue)];
+  }
+}
+
 exports.UnknownError = UnknownError;
 exports.assert = assert;
 exports.assertNever = assertNever;
+exports.ensure = ensure;
 exports.failure = failure;
+exports.go = goTryRaw;
+exports.goAll = goTryAllRaw;
+exports.goElse = goElse;
 exports.goTry = goTry;
 exports.goTryAll = goTryAll;
 exports.goTryAllRaw = goTryAllRaw;

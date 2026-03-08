@@ -4,7 +4,7 @@
 type Success<T> = readonly [undefined, T];
 type Failure<E> = readonly [E, undefined];
 type Result<E, T> = Success<T> | Failure<E>;
-type ResultWithDefault<E, T> = readonly [E | undefined, T];
+type ResultWithDefault$1<E, T> = readonly [E | undefined, T];
 type MaybePromise<T> = T | Promise<T>;
 /**
  * Base interface for tagged errors.
@@ -25,7 +25,7 @@ interface GoTryAllOptions {
 /**
  * Type for error constructors that can be used with goTryRaw.
  */
-type ErrorConstructor<E> = new (message: string, options?: {
+type ErrorConstructor$1<E> = new (message: string, options?: {
     cause?: unknown;
 }) => E;
 /**
@@ -33,11 +33,11 @@ type ErrorConstructor<E> = new (message: string, options?: {
  * errorClass and systemErrorClass are mutually exclusive - you can only provide one.
  */
 type GoTryRawOptions<E = Error> = {
-    errorClass: ErrorConstructor<E>;
+    errorClass: ErrorConstructor$1<E>;
     systemErrorClass?: never;
 } | {
     errorClass?: never;
-    systemErrorClass: ErrorConstructor<E>;
+    systemErrorClass: ErrorConstructor$1<E>;
 } | {
     errorClass?: never;
     systemErrorClass?: never;
@@ -49,12 +49,12 @@ type GoTryRawOptions<E = Error> = {
  */
 type GoTryAllRawOptions<E = Error> = {
     concurrency?: number;
-    errorClass: ErrorConstructor<E>;
+    errorClass: ErrorConstructor$1<E>;
     systemErrorClass?: never;
 } | {
     concurrency?: number;
     errorClass?: never;
-    systemErrorClass: ErrorConstructor<E>;
+    systemErrorClass: ErrorConstructor$1<E>;
 } | {
     concurrency?: number;
     errorClass?: never;
@@ -73,8 +73,8 @@ type GoTryAllRawOptions<E = Error> = {
  * type AppError = TaggedUnion<[typeof DatabaseError, typeof NetworkError]>
  * // Equivalent to: DatabaseError | NetworkError
  */
-type TaggedUnion<T extends readonly ErrorConstructor<unknown>[]> = {
-    [K in keyof T]: T[K] extends ErrorConstructor<infer E> ? E : never;
+type TaggedUnion<T extends readonly ErrorConstructor$1<unknown>[]> = {
+    [K in keyof T]: T[K] extends ErrorConstructor$1<infer E> ? E : never;
 }[number];
 
 /**
@@ -198,11 +198,11 @@ declare function goTryRaw<T, E = InstanceType<typeof UnknownError>>(value: T, op
  *   name: 'Guest'
  * }))
  */
-declare function goTryOr<T>(fn: () => never, defaultValue: T | (() => T)): ResultWithDefault<string, T>;
-declare function goTryOr<T>(fn: () => Promise<T>, defaultValue: T | (() => T)): Promise<ResultWithDefault<string, T>>;
-declare function goTryOr<T>(promise: Promise<T>, defaultValue: T | (() => T)): Promise<ResultWithDefault<string, T>>;
-declare function goTryOr<T>(fn: () => T, defaultValue: T | (() => T)): ResultWithDefault<string, T>;
-declare function goTryOr<T>(value: T, defaultValue: T | (() => T)): ResultWithDefault<string, T>;
+declare function goTryOr<T>(fn: () => never, defaultValue: T | (() => T)): ResultWithDefault$1<string, T>;
+declare function goTryOr<T>(fn: () => Promise<T>, defaultValue: T | (() => T)): Promise<ResultWithDefault$1<string, T>>;
+declare function goTryOr<T>(promise: Promise<T>, defaultValue: T | (() => T)): Promise<ResultWithDefault$1<string, T>>;
+declare function goTryOr<T>(fn: () => T, defaultValue: T | (() => T)): ResultWithDefault$1<string, T>;
+declare function goTryOr<T>(value: T, defaultValue: T | (() => T)): ResultWithDefault$1<string, T>;
 
 /**
  * Executes multiple promises or factory functions in parallel (or with limited concurrency)
@@ -344,6 +344,47 @@ declare function assert(condition: unknown, error: Error | string): asserts cond
  */
 declare function assert<T extends Error>(condition: unknown, ErrorClass: new (message: string) => T, message: string): asserts condition;
 
+/**
+ * Error class constructor type.
+ */
+type ErrorConstructor<E extends Error = Error> = new (message: string, options?: {
+    cause?: unknown;
+}) => E;
+/**
+ * Ensures a value satisfies a predicate, throwing an error if not.
+ * Returns the value if the predicate passes.
+ *
+ * Accepts sync values, promises, or functions - just like `go`.
+ *
+ * The error can be either:
+ * - An Error class constructor (instantiated with the value as cause)
+ * - A function that creates and returns an Error
+ * - If omitted, defaults to UnknownError
+ *
+ * @example
+ * ```typescript
+ * // With sync value (uses UnknownError by default)
+ * ensure(42, n => n > 0)
+ *
+ * // With promise (awaited internally)
+ * const res = await ensure(fetch('/api'), r => r.ok, RequestFailedError)
+ *
+ * // With function
+ * const res = ensure(() => parseInt('42'), n => !isNaN(n), Error)
+ *
+ * // With error factory function
+ * const res = ensure(
+ *   await fetch('/api'),
+ *   r => r.ok,
+ *   r => new Error(`HTTP ${r.status}`)
+ * )
+ * ```
+ */
+declare function ensure<T>(value: Promise<T>, predicate: (value: T) => boolean, error?: ErrorConstructor<Error> | ((value: T) => Error)): Promise<T>;
+declare function ensure<T>(fn: () => Promise<T>, predicate: (value: T) => boolean, error?: ErrorConstructor<Error> | ((value: T) => Error)): Promise<T>;
+declare function ensure<T>(fn: () => T, predicate: (value: T) => boolean, error?: ErrorConstructor<Error> | ((value: T) => Error)): T;
+declare function ensure<T>(value: T, predicate: (value: T) => boolean, error?: ErrorConstructor<Error> | ((value: T) => Error)): T;
+
 declare function isSuccess<E, T>(result: Result<E, T>): result is Success<T>;
 declare function isFailure<E, T>(result: Result<E, T>): result is Failure<E>;
 declare function success<T>(value: T): Success<T>;
@@ -375,6 +416,40 @@ declare function failure<E>(error: E): Failure<E>;
  */
 declare function assertNever(value: never): never;
 
-export { UnknownError, assert, assertNever, failure, goTry, goTryAll, goTryAllRaw, goTryOr, goTryRaw, isFailure, isSuccess, success, taggedError };
-export type { ErrorConstructor, Failure, GoTryAllOptions, GoTryAllRawOptions, GoTryRawOptions, MaybePromise, Result, ResultWithDefault, Success, TaggedError, TaggedUnion };
+/**
+ * Result type with Error and a default value.
+ * On error, returns [Error, DefaultT]
+ * On success, returns [undefined, T]
+ */
+type ResultWithDefault<E, T, D = T> = readonly [E, D] | readonly [undefined, T];
+/**
+ * Executes a function, promise, or value and returns a Result type with a fallback default.
+ * If an error occurs, it returns the actual Error object and the default value.
+ *
+ * @template T The type of the successful result
+ * @template D The type of the default value (defaults to T)
+ * @param {T | Promise<T> | (() => T | Promise<T>)} value - The value, promise, or function to execute
+ * @param {D | (() => D)} defaultValue - The default value or a function to compute it (only called on failure)
+ * @returns {ResultWithDefault<Error, T, D> | Promise<ResultWithDefault<Error, T, D>>} A tuple of [error, value] or Promise thereof
+ *
+ * @example
+ * // With a static default
+ * const [err, config] = goElse(() => JSON.parse('invalid'), { port: 3000 })
+ * // err is the Error object, config is { port: 3000 }
+ *
+ * @example
+ * // With a computed default (lazy evaluation)
+ * const [err, user] = await goElse(fetchUser(id), () => ({
+ *   id: 'anonymous',
+ *   name: 'Guest'
+ * }))
+ */
+declare function goElse<T, D = T>(fn: () => never, defaultValue: D | (() => D)): ResultWithDefault<Error, never, D>;
+declare function goElse<T, D = T>(fn: () => Promise<T>, defaultValue: D | (() => D)): Promise<ResultWithDefault<Error, T, D>>;
+declare function goElse<T, D = T>(promise: Promise<T>, defaultValue: D | (() => D)): Promise<ResultWithDefault<Error, T, D>>;
+declare function goElse<T, D = T>(fn: () => T, defaultValue: D | (() => D)): ResultWithDefault<Error, T, D>;
+declare function goElse<T, D = T>(value: T, defaultValue: D | (() => D)): ResultWithDefault<Error, T, D>;
+
+export { UnknownError, assert, assertNever, ensure, failure, goTryRaw as go, goTryAllRaw as goAll, goElse, goTry, goTryAll, goTryAllRaw, goTryOr, goTryRaw, isFailure, isSuccess, success, taggedError };
+export type { ErrorConstructor$1 as ErrorConstructor, Failure, GoTryAllOptions, GoTryAllRawOptions, GoTryRawOptions, MaybePromise, Result, ResultWithDefault$1 as ResultWithDefault, Success, TaggedError, TaggedUnion };
 //# sourceMappingURL=index.d.cts.map
